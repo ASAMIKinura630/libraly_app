@@ -131,21 +131,36 @@
     .lend-panels,
     .search-panels {
       display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
+      flex-direction: column;
       align-items: stretch;
-      gap: 1rem;
+      gap: 1.25rem;
       margin-top: 1rem;
     }
 
     .lend-panel,
     .search-panel {
-      flex: 1 1 0;
-      min-width: 0;
+      flex: none;
+      width: 100%;
       background: #f9f7f2;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 1rem 1rem 1.1rem;
+    }
+
+    @media (min-width: 600px) {
+      .lend-panels,
+      .search-panels {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 1rem;
+      }
+
+      .lend-panel,
+      .search-panel {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+      }
     }
 
     .lend-panel--book,
