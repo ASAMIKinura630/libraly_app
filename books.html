@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>図書マスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --accent-hover: #234839;
+      --danger: #9b3b32;
+      --danger-hover: #7e2f28;
+      --success-bg: #e8f3ec;
+      --success-text: #1f5c38;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --error-bg: #fdecea;
+      --error-text: #8b2e26;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 720px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .header {
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    .nav a[aria-current="page"] {
+      color: var(--text);
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .nav--return {
+      margin-bottom: 0.35rem;
+    }
+
+    .nav--return a {
+      font-size: 0.85rem;
+    }
+
+    .maintenance-banner {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .message {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .message.is-visible {
+      display: block;
+    }
+
+    .message--success {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .message--warn {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+    }
+
+    .message--error {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .list-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .list-filter {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: min(100%, 240px);
+      max-width: 360px;
+    }
+
+    .list-filter label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .list-filter select {
+      flex: 1;
+      min-width: 140px;
+      min-height: 44px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    .form-group__optional {
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .form-group #category-hint {
+      display: block;
+      margin-top: 0.35rem;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.5rem 1.25rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg);
+    }
+
+    .btn-edit {
+      background: #e8eef5;
+      color: #2a4365;
+      flex: 1;
+    }
+
+    .btn-edit:hover:not(:disabled) {
+      background: #d5e0ed;
+    }
+
+    .btn-delete {
+      background: #fce8e6;
+      color: var(--danger);
+      flex: 1;
+    }
+
+    .btn-delete:hover:not(:disabled) {
+      background: #f5d0cc;
+    }
+
+    .edit-hint {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--accent);
+      display: none;
+    }
+
+    .edit-hint.is-visible {
+      display: block;
+    }
+
+    .book-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .book-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      background: #fff;
+    }
+
+    .book-item.is-editing {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 90, 74, 0.15);
+    }
+
+    .book-item__title {
+      margin: 0 0 0.35rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .book-item__meta {
+      margin: 0 0 0.35rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .book-item__category {
+      margin: 0 0 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .book-item__category-label {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: #e8eef5;
+      color: #2a4365;
+      font-weight: 600;
+    }
+
+    .book-item__category--none {
+      color: var(--muted);
+      font-weight: 400;
+      background: transparent;
+      padding: 0;
+    }
+
+    .book-item__content {
+      margin: 0 0 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .book-item__date {
+      margin: 0 0 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .book-item__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 1.5rem;
+      margin: 0;
+    }
+
+    @media (min-width: 600px) {
+      .app {
+        padding: 2rem 1.5rem 3rem;
+      }
+
+      .book-item__actions {
+        max-width: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav nav--return" aria-label="業務画面への復帰">
+      <a href="index.html">← 貸出・返却に戻る</a>
+    </nav>
+    <nav class="nav" aria-label="マスタ保守メニュー">
+      <a href="admin.html">マスタ保守</a>
+      <a href="books.html" aria-current="page">図書</a>
+      <a href="categories.html">カテゴリ</a>
+      <a href="students.html">学生</a>
+      <a href="masters.html">学部・学科</a>
+    </nav>
+
+    <div class="maintenance-banner" role="note">
+      マスタ保守モード — 変更内容は貸出画面の図書選択肢に反映されます
+    </div>
+
+    <header class="header">
+      <h1>図書マスタ保守</h1>
+      <p>図書データの登録・一覧・編集・削除</p>
+    </header>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">図書の登録・編集</h2>
+      <p id="edit-hint" class="edit-hint">編集中です。内容を変更して「更新」を押してください。</p>
+
+      <form id="book-form" novalidate>
+        <div class="form-group">
+          <label for="title">タイトル <span aria-hidden="true">*</span></label>
+          <input type="text" id="title" name="title" autocomplete="off" placeholder="例：吾輩は猫である" required />
+        </div>
+        <div class="form-group">
+          <label for="content">あらすじ <span aria-hidden="true">*</span></label>
+          <textarea id="content" name="content" placeholder="図書の内容概要を入力" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="name">著者 <span aria-hidden="true">*</span></label>
+          <input type="text" id="name" name="name" autocomplete="off" placeholder="例：夏目漱石" required />
+        </div>
+        <div class="form-group">
+          <label for="category-id">図書カテゴリ <span class="form-group__optional">（任意）</span></label>
+          <select id="category-id" name="category_id" aria-describedby="category-hint">
+            <option value="">未選択</option>
+          </select>
+          <span id="category-hint" class="form-group__optional">選択しなくても保存できます</span>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="save-btn" class="btn btn-primary">保存</button>
+          <button type="button" id="cancel-btn" class="btn btn-secondary" hidden>キャンセル</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="list-heading">
+      <div class="list-header">
+        <h2 id="list-heading">図書一覧</h2>
+        <div class="list-filter">
+          <label for="list-category-filter">表示カテゴリ</label>
+          <select id="list-category-filter" aria-label="一覧を絞り込むカテゴリ">
+            <option value="">すべて</option>
+          </select>
+        </div>
+      </div>
+      <div id="book-list" class="book-list">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // .env.local と同じ値に設定してください
+    const SUPABASE_URL = "https://bpfytlurmubgmzaisonp.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZnl0bHVybXViZ216YWlzb25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTA2MzUsImV4cCI6MjA5NTI2NjYzNX0.rIimKp_spSxCuuKCJlFoa8ux4BvFodHam0S3XGTFRa0";
+
+    const TABLE_NAME = "libraly_app";
+    const CATEGORY_TABLE = "libraly_app_category";
+    const MESSAGE_HIDE_MS = 4000;
+
+    let editingId = null;
+    let messageTimer = null;
+    let isBusy = false;
+    let booksCache = [];
+    let categoriesCache = [];
+    let listFilterCategoryId = "";
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const messageEl = document.getElementById("message");
+    const editHintEl = document.getElementById("edit-hint");
+    const bookForm = document.getElementById("book-form");
+    const titleInput = document.getElementById("title");
+    const contentInput = document.getElementById("content");
+    const nameInput = document.getElementById("name");
+    const categorySelect = document.getElementById("category-id");
+    const listCategoryFilter = document.getElementById("list-category-filter");
+    const saveBtn = document.getElementById("save-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const bookListEl = document.getElementById("book-list");
+
+    function showMessage(text, type) {
+      clearTimeout(messageTimer);
+      messageEl.textContent = text;
+      messageEl.className = "message is-visible message--" + type;
+      messageTimer = setTimeout(function () {
+        messageEl.classList.remove("is-visible");
+      }, MESSAGE_HIDE_MS);
+    }
+
+    function setBusy(busy) {
+      isBusy = busy;
+      saveBtn.disabled = busy;
+      cancelBtn.disabled = busy;
+      categorySelect.disabled = busy;
+      listCategoryFilter.disabled = busy;
+      bookListEl.querySelectorAll("button").forEach(function (btn) {
+        btn.disabled = busy;
+      });
+    }
+
+    function getCategoryIdFromSelect() {
+      const value = categorySelect.value;
+      return value === "" ? null : value;
+    }
+
+    function getFormValues() {
+      return {
+        title: titleInput.value.trim(),
+        content: contentInput.value.trim(),
+        name: nameInput.value.trim(),
+        category_id: getCategoryIdFromSelect(),
+      };
+    }
+
+    function getCategoryName(book) {
+      if (book.libraly_app_category && book.libraly_app_category.name) {
+        return book.libraly_app_category.name;
+      }
+      if (book.category_id) {
+        const cat = categoriesCache.find(function (c) {
+          return c.id === book.category_id;
+        });
+        if (cat) return cat.name;
+      }
+      return null;
+    }
+
+    function validateForm() {
+      const values = getFormValues();
+      if (!values.title || !values.content || !values.name) {
+        showMessage("タイトル・あらすじ・著者を入力してください。", "warn");
+        return null;
+      }
+      return values;
+    }
+
+    function clearForm() {
+      bookForm.reset();
+      categorySelect.value = "";
+      editingId = null;
+      saveBtn.textContent = "保存";
+      editHintEl.classList.remove("is-visible");
+      cancelBtn.hidden = true;
+      bookListEl.querySelectorAll(".book-item.is-editing").forEach(function (el) {
+        el.classList.remove("is-editing");
+      });
+    }
+
+    function enterEditMode(book) {
+      editingId = book.id;
+      titleInput.value = book.title;
+      contentInput.value = book.content;
+      nameInput.value = book.name;
+      categorySelect.value = book.category_id || "";
+      saveBtn.textContent = "更新";
+      editHintEl.classList.add("is-visible");
+      cancelBtn.hidden = false;
+      titleInput.focus();
+
+      bookListEl.querySelectorAll(".book-item").forEach(function (el) {
+        el.classList.toggle("is-editing", el.dataset.id === book.id);
+      });
+
+      showMessage("「" + book.title + "」を編集しています。", "warn");
+    }
+
+    function formatDate(isoString) {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return isoString;
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function fillCategorySelect(selectEl, emptyLabel) {
+      const currentValue = selectEl.value;
+      selectEl.innerHTML = "";
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = emptyLabel;
+      selectEl.appendChild(emptyOption);
+
+      categoriesCache.forEach(function (cat) {
+        const option = document.createElement("option");
+        option.value = cat.id;
+        option.textContent = cat.name;
+        selectEl.appendChild(option);
+      });
+
+      if (currentValue && selectEl.querySelector('option[value="' + currentValue + '"]')) {
+        selectEl.value = currentValue;
+      }
+    }
+
+    async function loadCategories() {
+      const { data, error } = await supabaseClient
+        .from(CATEGORY_TABLE)
+        .select("id, name")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        showMessage("カテゴリの取得に失敗しました。接続を確認してください。", "error");
+        return false;
+      }
+
+      categoriesCache = data || [];
+      fillCategorySelect(categorySelect, "未選択");
+      fillCategorySelect(listCategoryFilter, "すべて");
+      listFilterCategoryId = listCategoryFilter.value;
+
+      return true;
+    }
+
+    function getFilteredBooks() {
+      if (!listFilterCategoryId) {
+        return booksCache;
+      }
+      return booksCache.filter(function (book) {
+        return book.category_id === listFilterCategoryId;
+      });
+    }
+
+    function getFilterCategoryName() {
+      if (!listFilterCategoryId) return null;
+      const cat = categoriesCache.find(function (c) {
+        return c.id === listFilterCategoryId;
+      });
+      return cat ? cat.name : null;
+    }
+
+    function renderCategoryHtml(book) {
+      const categoryName = getCategoryName(book);
+      if (categoryName) {
+        return (
+          '<p class="book-item__category">カテゴリ：' +
+          '<span class="book-item__category-label">' +
+          escapeHtml(categoryName) +
+          "</span></p>"
+        );
+      }
+      return '<p class="book-item__category">カテゴリ：<span class="book-item__category-label book-item__category--none">未設定</span></p>';
+    }
+
+    function renderBookList() {
+      if (booksCache.length === 0) {
+        bookListEl.innerHTML =
+          '<p class="empty-state">図書がまだ登録されていません。<br>上のフォームから登録してください。</p>';
+        return;
+      }
+
+      const filtered = getFilteredBooks();
+
+      if (filtered.length === 0) {
+        const filterName = getFilterCategoryName();
+        const label = filterName ? "「" + filterName + "」" : "選択したカテゴリ";
+        bookListEl.innerHTML =
+          '<p class="empty-state">' +
+          label +
+          "の図書はありません。<br>別のカテゴリを選ぶか、図書を登録してください。</p>";
+        return;
+      }
+
+      bookListEl.innerHTML = filtered
+        .map(function (book) {
+          const isEditing = editingId === book.id;
+          return (
+            '<article class="book-item' +
+            (isEditing ? " is-editing" : "") +
+            '" data-id="' +
+            escapeHtml(book.id) +
+            '">' +
+            '<h3 class="book-item__title">' +
+            escapeHtml(book.title) +
+            "</h3>" +
+            renderCategoryHtml(book) +
+            '<p class="book-item__meta">著者：' +
+            escapeHtml(book.name) +
+            "</p>" +
+            '<p class="book-item__content">' +
+            escapeHtml(book.content) +
+            "</p>" +
+            '<p class="book-item__date">登録：' +
+            escapeHtml(formatDate(book.created_at)) +
+            "</p>" +
+            '<div class="book-item__actions">' +
+            '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
+            '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
+            "</div>" +
+            "</article>"
+          );
+        })
+        .join("");
+    }
+
+    async function loadBooks() {
+      bookListEl.innerHTML = '<p class="loading">読み込み中…</p>';
+
+      const { data, error } = await supabaseClient
+        .from(TABLE_NAME)
+        .select(
+          "id, title, content, name, category_id, created_at, libraly_app_category ( name )"
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        booksCache = [];
+        bookListEl.innerHTML = "";
+        showMessage("データの取得に失敗しました。接続を確認してください。", "error");
+        return;
+      }
+
+      booksCache = data || [];
+      renderBookList();
+    }
+
+    async function saveBook() {
+      const values = validateForm();
+      if (!values) return;
+
+      setBusy(true);
+
+      try {
+        if (editingId) {
+          const { error } = await supabaseClient
+            .from(TABLE_NAME)
+            .update({
+              title: values.title,
+              content: values.content,
+              name: values.name,
+              category_id: values.category_id,
+            })
+            .eq("id", editingId);
+
+          if (error) throw error;
+          clearForm();
+          await loadBooks();
+          showMessage("図書を更新しました。", "success");
+        } else {
+          const { error } = await supabaseClient.from(TABLE_NAME).insert({
+            title: values.title,
+            content: values.content,
+            name: values.name,
+            category_id: values.category_id,
+          });
+
+          if (error) throw error;
+          clearForm();
+          await loadBooks();
+          showMessage("図書を保存しました。", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        showMessage("処理に失敗しました。もう一度お試しください。", "error");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function deleteBook(id, title) {
+      const ok = window.confirm(
+        "この図書を削除しますか？\n貸出履歴がある図書は削除できません。"
+      );
+      if (!ok) return;
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient.from(TABLE_NAME).delete().eq("id", id);
+        if (error) throw error;
+
+        if (editingId === id) {
+          clearForm();
+        }
+
+        await loadBooks();
+        showMessage("図書を削除しました。", "success");
+      } catch (err) {
+        console.error(err);
+        showMessage("処理に失敗しました。もう一度お試しください。", "error");
+        await loadBooks();
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    bookForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!isBusy) saveBook();
+    });
+
+    cancelBtn.addEventListener("click", function () {
+      clearForm();
+      showMessage("編集をキャンセルしました。", "warn");
+    });
+
+    listCategoryFilter.addEventListener("change", function () {
+      listFilterCategoryId = listCategoryFilter.value;
+      renderBookList();
+    });
+
+    bookListEl.addEventListener("click", async function (e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn || isBusy) return;
+
+      const item = btn.closest(".book-item");
+      if (!item) return;
+
+      const id = item.dataset.id;
+      const book = booksCache.find(function (b) {
+        return b.id === id;
+      });
+
+      if (!book) {
+        showMessage("図書データの取得に失敗しました。", "error");
+        return;
+      }
+
+      if (btn.dataset.action === "edit") {
+        enterEditMode(book);
+        bookForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      if (btn.dataset.action === "delete") {
+        await deleteBook(id, book.title);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", async function () {
+      setBusy(true);
+      await loadCategories();
+      await loadBooks();
+      setBusy(false);
+    });
+  </script>
+</body>
+</html>

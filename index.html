@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>貸出・返却 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --accent-hover: #234839;
+      --danger: #9b3b32;
+      --success-bg: #e8f3ec;
+      --success-text: #1f5c38;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --error-bg: #fdecea;
+      --error-text: #8b2e26;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 960px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      align-items: center;
+    }
+
+    .nav--ops {
+      justify-content: space-between;
+    }
+
+    .nav__admin-link {
+      margin-left: auto;
+    }
+
+    .nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    .nav a[aria-current="page"] {
+      color: var(--text);
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .header {
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .message {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .message.is-visible {
+      display: block;
+    }
+
+    .message--success { background: var(--success-bg); color: var(--success-text); }
+    .message--warn { background: var(--warn-bg); color: var(--warn-text); }
+    .message--error { background: var(--error-bg); color: var(--error-text); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .lend-block {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .form-group select {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .form-group select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.5rem 1.25rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-return {
+      background: var(--success-bg);
+      color: var(--success-text);
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .btn-return:hover:not(:disabled) {
+      background: #d4eadc;
+    }
+
+    .list-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      align-items: flex-end;
+      margin: 1rem 0;
+    }
+
+    .list-toolbar .form-group {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .list-toolbar select,
+    .list-toolbar input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .list-toolbar--search {
+      margin-top: 0;
+    }
+
+    .list-count {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .history-table th,
+    .history-table td {
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .history-table th {
+      font-weight: 600;
+      background: #f8f6f1;
+      white-space: nowrap;
+    }
+
+    .history-table .actions {
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge--lending {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+    }
+
+    .badge--returned {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .empty-state,
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav nav--ops" aria-label="メインメニュー">
+      <a href="index.html" aria-current="page">貸出・返却</a>
+      <a href="admin.html" class="nav__admin-link">マスタ保守 →</a>
+    </nav>
+
+    <header class="header">
+      <h1>貸出・返却</h1>
+      <p>図書の貸出登録と返却処理</p>
+    </header>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section class="card" aria-labelledby="lend-heading">
+      <h2 id="lend-heading">貸出登録</h2>
+
+      <form id="lend-form" novalidate>
+        <div class="form-grid">
+          <div class="lend-block">
+            <div class="form-group">
+              <label for="book-category-filter">図書カテゴリ</label>
+              <select id="book-category-filter" aria-label="図書カテゴリで絞り込み">
+                <option value="">すべて</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="book-id">図書 <span aria-hidden="true">*</span></label>
+              <select id="book-id" name="book_id" required>
+                <option value="">選択してください</option>
+              </select>
+            </div>
+          </div>
+          <div class="lend-block">
+            <div class="form-group">
+              <label for="lend-faculty-filter">学部</label>
+              <select id="lend-faculty-filter" aria-label="学部で絞り込み">
+                <option value="">すべて</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="lend-department-filter">学科</label>
+              <select id="lend-department-filter" aria-label="学科で絞り込み" disabled>
+                <option value="">すべて</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="student-number">学生 <span aria-hidden="true">*</span></label>
+              <select id="student-number" name="student_number" required>
+                <option value="">選択してください</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <span class="form-hint">貸出中の図書は選択できません。先に返却してください。</span>
+        <div class="form-actions">
+          <button type="submit" id="lend-btn" class="btn btn-primary">貸出する</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="list-heading">
+      <h2 id="list-heading">貸し出し履歴</h2>
+
+      <div class="list-toolbar">
+        <div class="form-group">
+          <label for="status-filter">状態で絞り込み</label>
+          <select id="status-filter" aria-label="返却状態で絞り込み">
+            <option value="">すべて</option>
+            <option value="lending" selected>貸出中のみ</option>
+            <option value="returned">返却済みのみ</option>
+          </select>
+        </div>
+      </div>
+      <div class="list-toolbar list-toolbar--search">
+        <div class="form-group">
+          <label for="search-book-title">図書名</label>
+          <input type="search" id="search-book-title" placeholder="部分一致" aria-label="図書名で検索" />
+        </div>
+        <div class="form-group">
+          <label for="search-book-author">著者</label>
+          <input type="search" id="search-book-author" placeholder="部分一致" aria-label="著者で検索" />
+        </div>
+        <div class="form-group">
+          <label for="search-student-name">氏名</label>
+          <input type="search" id="search-student-name" placeholder="部分一致" aria-label="氏名で検索" />
+        </div>
+      </div>
+
+      <p id="list-count" class="list-count"></p>
+      <div id="history-list" class="table-wrap">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // .env.local と同じ値に設定してください
+    const SUPABASE_URL = "https://bpfytlurmubgmzaisonp.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZnl0bHVybXViZ216YWlzb25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTA2MzUsImV4cCI6MjA5NTI2NjYzNX0.rIimKp_spSxCuuKCJlFoa8ux4BvFodHam0S3XGTFRa0";
+
+    const HISTORY_TABLE = "libraly_app_lending_history";
+    const BOOK_TABLE = "libraly_app";
+    const STUDENT_TABLE = "libraly_app_student";
+    const CATEGORY_TABLE = "libraly_app_category";
+    const FACULTY_TABLE = "libraly_app_faculty";
+    const DEPARTMENT_TABLE = "libraly_app_department";
+    const MESSAGE_HIDE_MS = 4000;
+
+    let messageTimer = null;
+    let isBusy = false;
+    let booksCache = [];
+    let studentsCache = [];
+    let categoriesCache = [];
+    let facultiesCache = [];
+    let departmentsCache = [];
+    let historyCache = [];
+    let statusFilter = "lending";
+    let searchBookTitle = "";
+    let searchBookAuthor = "";
+    let searchStudentName = "";
+    let bookCategoryFilter = "";
+    let lendFacultyFilter = "";
+    let lendDepartmentFilter = "";
+
+    const messageEl = document.getElementById("message");
+    const lendForm = document.getElementById("lend-form");
+    const bookCategoryFilterEl = document.getElementById("book-category-filter");
+    const bookSelect = document.getElementById("book-id");
+    const lendFacultyFilterEl = document.getElementById("lend-faculty-filter");
+    const lendDepartmentFilterEl = document.getElementById("lend-department-filter");
+    const studentSelect = document.getElementById("student-number");
+    const lendBtn = document.getElementById("lend-btn");
+    const statusFilterEl = document.getElementById("status-filter");
+    const searchBookTitleInput = document.getElementById("search-book-title");
+    const searchBookAuthorInput = document.getElementById("search-book-author");
+    const searchStudentNameInput = document.getElementById("search-student-name");
+    const listCountEl = document.getElementById("list-count");
+    const historyListEl = document.getElementById("history-list");
+
+    function escapeHtml(str) {
+      if (str == null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showMessage(text, type) {
+      if (messageTimer) clearTimeout(messageTimer);
+      messageEl.textContent = text;
+      messageEl.className = "message is-visible message--" + type;
+      if (type !== "error") {
+        messageTimer = setTimeout(function () {
+          messageEl.classList.remove("is-visible");
+        }, MESSAGE_HIDE_MS);
+      }
+    }
+
+    function setBusy(busy) {
+      isBusy = busy;
+      lendBtn.disabled = busy;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function getActiveLoanBookIds() {
+      const ids = {};
+      historyCache.forEach(function (h) {
+        if (!h.is_returned) ids[h.book_id] = true;
+      });
+      return ids;
+    }
+
+    function getBookCategoryName(book) {
+      if (book.libraly_app_category && book.libraly_app_category.name) {
+        return book.libraly_app_category.name;
+      }
+      return "未設定";
+    }
+
+    function formatBookSelectLabel(book, onLoan) {
+      let label =
+        book.title + "（" + getBookCategoryName(book) + "）（" + book.name + "）";
+      if (onLoan) label += " — 貸出中";
+      return label;
+    }
+
+
+    function getBooksForLendSelect() {
+      let list = booksCache.slice();
+      if (bookCategoryFilter === "__none__") {
+        list = list.filter(function (b) {
+          return !b.category_id;
+        });
+      } else if (bookCategoryFilter) {
+        list = list.filter(function (b) {
+          return b.category_id === bookCategoryFilter;
+        });
+      }
+      return list;
+    }
+
+    function getStudentDepartmentId(student) {
+      if (student.department_id) return student.department_id;
+      const dept = student.libraly_app_department;
+      return dept && dept.id ? dept.id : "";
+    }
+
+    function getStudentFacultyId(student) {
+      const dept = student.libraly_app_department;
+      if (dept && dept.faculty_id) return dept.faculty_id;
+      if (dept && dept.libraly_app_faculty && dept.libraly_app_faculty.id) {
+        return dept.libraly_app_faculty.id;
+      }
+      const departmentId = getStudentDepartmentId(student);
+      if (!departmentId) return "";
+      const d = departmentsCache.find(function (x) {
+        return x.id === departmentId;
+      });
+      return d ? d.faculty_id : "";
+    }
+
+    function getStudentsForLendSelect() {
+      let list = studentsCache.slice();
+      if (lendDepartmentFilter) {
+        list = list.filter(function (s) {
+          return getStudentDepartmentId(s) === lendDepartmentFilter;
+        });
+      } else if (lendFacultyFilter) {
+        list = list.filter(function (s) {
+          return getStudentFacultyId(s) === lendFacultyFilter;
+        });
+      }
+      return list;
+    }
+
+    function populateBookCategoryFilter() {
+      const current = bookCategoryFilterEl.value;
+      bookCategoryFilterEl.innerHTML =
+        '<option value="">すべて</option>' +
+        '<option value="__none__">未設定</option>';
+      categoriesCache.forEach(function (c) {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.name;
+        bookCategoryFilterEl.appendChild(opt);
+      });
+      if (
+        current &&
+        bookCategoryFilterEl.querySelector('option[value="' + current + '"]')
+      ) {
+        bookCategoryFilterEl.value = current;
+      }
+      bookCategoryFilter = bookCategoryFilterEl.value;
+    }
+
+    function populateLendFacultyFilter() {
+      const current = lendFacultyFilterEl.value;
+      lendFacultyFilterEl.innerHTML = '<option value="">すべて</option>';
+      facultiesCache.forEach(function (f) {
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = f.name;
+        lendFacultyFilterEl.appendChild(opt);
+      });
+      if (
+        current &&
+        lendFacultyFilterEl.querySelector('option[value="' + current + '"]')
+      ) {
+        lendFacultyFilterEl.value = current;
+      }
+      lendFacultyFilter = lendFacultyFilterEl.value;
+    }
+
+    function populateLendDepartmentFilter() {
+      const current = lendDepartmentFilterEl.value;
+      lendDepartmentFilterEl.innerHTML = '<option value="">すべて</option>';
+
+      if (!lendFacultyFilter) {
+        lendDepartmentFilterEl.disabled = true;
+        lendDepartmentFilterEl.value = "";
+        lendDepartmentFilter = "";
+        return;
+      }
+
+      lendDepartmentFilterEl.disabled = false;
+      departmentsCache
+        .filter(function (d) {
+          return d.faculty_id === lendFacultyFilter;
+        })
+        .forEach(function (d) {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.name;
+          lendDepartmentFilterEl.appendChild(opt);
+        });
+
+      if (
+        current &&
+        lendDepartmentFilterEl.querySelector('option[value="' + current + '"]')
+      ) {
+        lendDepartmentFilterEl.value = current;
+      } else {
+        lendDepartmentFilterEl.value = "";
+      }
+      lendDepartmentFilter = lendDepartmentFilterEl.value;
+    }
+
+    function populateBookSelect() {
+      const activeIds = getActiveLoanBookIds();
+      const current = bookSelect.value;
+      const books = getBooksForLendSelect();
+      bookSelect.innerHTML = '<option value="">選択してください</option>';
+
+      books.forEach(function (b) {
+        const opt = document.createElement("option");
+        opt.value = b.id;
+        const onLoan = !!activeIds[b.id];
+        opt.textContent = formatBookSelectLabel(b, onLoan);
+        opt.disabled = onLoan;
+        bookSelect.appendChild(opt);
+      });
+
+      if (current && bookSelect.querySelector('option[value="' + current + '"]:not([disabled])')) {
+        bookSelect.value = current;
+      } else {
+        bookSelect.value = "";
+      }
+    }
+
+    function getStudentFacultyName(student) {
+      const dept = student.libraly_app_department;
+      if (dept && dept.libraly_app_faculty && dept.libraly_app_faculty.name) {
+        return dept.libraly_app_faculty.name;
+      }
+      return "";
+    }
+
+    function getStudentDepartmentName(student) {
+      const dept = student.libraly_app_department;
+      if (dept && dept.name) return dept.name;
+      return "";
+    }
+
+    function formatStudentSelectLabel(student) {
+      let label = student.student_number + " — " + student.name;
+      const faculty = getStudentFacultyName(student);
+      const department = getStudentDepartmentName(student);
+      if (faculty && department) {
+        label += "（" + faculty + " / " + department + "）";
+      } else if (faculty || department) {
+        label += "（" + (faculty || department) + "）";
+      }
+      return label;
+    }
+
+    function populateStudentSelect() {
+      const current = studentSelect.value;
+      const students = getStudentsForLendSelect();
+      studentSelect.innerHTML = '<option value="">選択してください</option>';
+
+      students.forEach(function (s) {
+        const opt = document.createElement("option");
+        opt.value = s.student_number;
+        opt.textContent = formatStudentSelectLabel(s);
+        studentSelect.appendChild(opt);
+      });
+
+      if (current && studentSelect.querySelector('option[value="' + current + '"]')) {
+        studentSelect.value = current;
+      } else {
+        studentSelect.value = "";
+      }
+    }
+
+    function getBookTitle(record) {
+      const book = record.libraly_app;
+      if (book && book.title) return book.title;
+      const found = booksCache.find(function (b) {
+        return b.id === record.book_id;
+      });
+      return found ? found.title : "（不明）";
+    }
+
+    function getBookAuthor(record) {
+      const book = record.libraly_app;
+      if (book && book.name) return book.name;
+      const found = booksCache.find(function (b) {
+        return b.id === record.book_id;
+      });
+      return found ? found.name : "—";
+    }
+
+    function getStudentName(record) {
+      const student = record.libraly_app_student;
+      if (student && student.name) return student.name;
+      const found = studentsCache.find(function (s) {
+        return s.student_number === record.student_number;
+      });
+      return found ? found.name : "（不明）";
+    }
+
+    function matchesSearchField(value, query) {
+      if (!query) return true;
+      return String(value).toLowerCase().indexOf(query.toLowerCase()) !== -1;
+    }
+
+    function readSearchFilters() {
+      searchBookTitle = searchBookTitleInput.value.trim();
+      searchBookAuthor = searchBookAuthorInput.value.trim();
+      searchStudentName = searchStudentNameInput.value.trim();
+    }
+
+    function getFilteredHistory() {
+      let list = historyCache.slice();
+
+      if (statusFilter === "lending") {
+        list = list.filter(function (h) {
+          return !h.is_returned;
+        });
+      } else if (statusFilter === "returned") {
+        list = list.filter(function (h) {
+          return h.is_returned;
+        });
+      }
+
+      if (searchBookTitle || searchBookAuthor || searchStudentName) {
+        list = list.filter(function (h) {
+          return (
+            matchesSearchField(getBookTitle(h), searchBookTitle) &&
+            matchesSearchField(getBookAuthor(h), searchBookAuthor) &&
+            matchesSearchField(getStudentName(h), searchStudentName)
+          );
+        });
+      }
+
+      return list;
+    }
+
+    function renderHistoryList() {
+      if (historyCache.length === 0) {
+        listCountEl.textContent = "";
+        historyListEl.innerHTML =
+          '<p class="empty-state">貸し出し履歴がありません。<br>上のフォームから貸出を登録してください。</p>';
+        return;
+      }
+
+      const filtered = getFilteredHistory();
+      listCountEl.textContent =
+        "表示：" + filtered.length + " 件 / 全 " + historyCache.length + " 件";
+
+      if (filtered.length === 0) {
+        historyListEl.innerHTML =
+          '<p class="empty-state">条件に一致する履歴がありません。<br>絞り込みや検索条件を変更してください。</p>';
+        return;
+      }
+
+      historyListEl.innerHTML =
+        '<table class="history-table">' +
+        "<thead><tr>" +
+        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸出日時</th><th>操作</th>" +
+        "</tr></thead><tbody>" +
+        filtered
+          .map(function (h) {
+            const statusBadge = h.is_returned
+              ? '<span class="badge badge--returned">返却済み</span>'
+              : '<span class="badge badge--lending">貸出中</span>';
+            const actionCell = h.is_returned
+              ? "—"
+              : '<button type="button" class="btn btn-return" data-action="return">返却</button>';
+
+            return (
+              "<tr data-id=\"" +
+              escapeHtml(h.id) +
+              "\">" +
+              "<td>" +
+              statusBadge +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getBookTitle(h)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getBookAuthor(h)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(h.student_number) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getStudentName(h)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(formatDateTime(h.created_at)) +
+              "</td>" +
+              '<td class="actions">' +
+              actionCell +
+              "</td></tr>"
+            );
+          })
+          .join("") +
+        "</tbody></table>";
+    }
+
+    async function loadCategories() {
+      const { data, error } = await supabaseClient
+        .from(CATEGORY_TABLE)
+        .select("id, name")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        return false;
+      }
+
+      categoriesCache = data || [];
+      populateBookCategoryFilter();
+      return true;
+    }
+
+    async function loadFacultyDepartment() {
+      const [facultyRes, deptRes] = await Promise.all([
+        supabaseClient.from(FACULTY_TABLE).select("id, name").order("name", { ascending: true }),
+        supabaseClient
+          .from(DEPARTMENT_TABLE)
+          .select("id, name, faculty_id")
+          .order("name", { ascending: true }),
+      ]);
+
+      if (facultyRes.error || deptRes.error) {
+        console.error(facultyRes.error || deptRes.error);
+        return false;
+      }
+
+      facultiesCache = facultyRes.data || [];
+      departmentsCache = deptRes.data || [];
+      populateLendFacultyFilter();
+      populateLendDepartmentFilter();
+      return true;
+    }
+
+    async function loadBooks() {
+      const { data, error } = await supabaseClient
+        .from(BOOK_TABLE)
+        .select("id, title, name, category_id, libraly_app_category ( name )")
+        .order("title", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        showMessage("図書データの取得に失敗しました。", "error");
+        return false;
+      }
+
+      booksCache = data || [];
+      return true;
+    }
+
+    async function loadStudents() {
+      const { data, error } = await supabaseClient
+        .from(STUDENT_TABLE)
+        .select(
+          "student_number, name, department_id, " +
+            "libraly_app_department ( id, name, faculty_id, libraly_app_faculty ( id, name ) )"
+        )
+        .order("student_number", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        showMessage("学生データの取得に失敗しました。", "error");
+        return false;
+      }
+
+      studentsCache = data || [];
+      return true;
+    }
+
+    async function loadHistory() {
+      historyListEl.innerHTML = '<p class="loading">読み込み中…</p>';
+
+      const { data, error } = await supabaseClient
+        .from(HISTORY_TABLE)
+        .select(
+          "id, book_id, student_number, is_returned, created_at, " +
+            "libraly_app ( id, title, name ), " +
+            "libraly_app_student ( student_number, name )"
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        historyCache = [];
+        historyListEl.innerHTML = "";
+        listCountEl.textContent = "";
+        showMessage("貸し出し履歴の取得に失敗しました。テーブルが作成されているか確認してください。", "error");
+        return false;
+      }
+
+      historyCache = data || [];
+      populateBookSelect();
+      renderHistoryList();
+      return true;
+    }
+
+    async function lendBook() {
+      const bookId = bookSelect.value;
+      const studentNumber = studentSelect.value;
+
+      if (!bookId || !studentNumber) {
+        showMessage("図書と学生を選択してください。", "warn");
+        return;
+      }
+
+      const activeIds = getActiveLoanBookIds();
+      if (activeIds[bookId]) {
+        showMessage("この図書はすでに貸出中です。先に返却してください。", "warn");
+        populateBookSelect();
+        return;
+      }
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient.from(HISTORY_TABLE).insert({
+          book_id: bookId,
+          student_number: studentNumber,
+          is_returned: false,
+        });
+
+        if (error) {
+          console.error(error);
+          showMessage("貸出の登録に失敗しました。", "error");
+          return;
+        }
+
+        lendForm.reset();
+        showMessage("貸出を登録しました。", "success");
+        await loadHistory();
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function returnBook(historyId) {
+      const record = historyCache.find(function (h) {
+        return h.id === historyId;
+      });
+      if (!record || record.is_returned) return;
+
+      const bookTitle = getBookTitle(record);
+      const studentName = getStudentName(record);
+      const ok = window.confirm(
+        "「" + bookTitle + "」を " + studentName + " さんから返却しますか？"
+      );
+      if (!ok) return;
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient
+          .from(HISTORY_TABLE)
+          .update({ is_returned: true })
+          .eq("id", historyId);
+
+        if (error) {
+          console.error(error);
+          showMessage("返却処理に失敗しました。", "error");
+          return;
+        }
+
+        showMessage("返却を登録しました。", "success");
+        await loadHistory();
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    lendForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!isBusy) lendBook();
+    });
+
+    bookCategoryFilterEl.addEventListener("change", function () {
+      bookCategoryFilter = bookCategoryFilterEl.value;
+      populateBookSelect();
+    });
+
+    lendFacultyFilterEl.addEventListener("change", function () {
+      lendFacultyFilter = lendFacultyFilterEl.value;
+      lendDepartmentFilter = "";
+      populateLendDepartmentFilter();
+      populateStudentSelect();
+    });
+
+    lendDepartmentFilterEl.addEventListener("change", function () {
+      lendDepartmentFilter = lendDepartmentFilterEl.value;
+      populateStudentSelect();
+    });
+
+    function onSearchInputChange() {
+      readSearchFilters();
+      renderHistoryList();
+    }
+
+    statusFilterEl.addEventListener("change", function () {
+      statusFilter = statusFilterEl.value;
+      renderHistoryList();
+    });
+
+    searchBookTitleInput.addEventListener("input", onSearchInputChange);
+    searchBookAuthorInput.addEventListener("input", onSearchInputChange);
+    searchStudentNameInput.addEventListener("input", onSearchInputChange);
+
+    historyListEl.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-action]");
+      if (!btn || isBusy) return;
+
+      const row = btn.closest("tr[data-id]");
+      if (!row) return;
+
+      const id = row.getAttribute("data-id");
+      if (btn.getAttribute("data-action") === "return") {
+        returnBook(id);
+      }
+    });
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    (async function init() {
+      const [booksOk, studentsOk] = await Promise.all([
+        loadBooks(),
+        loadStudents(),
+        loadCategories(),
+        loadFacultyDepartment(),
+      ]);
+      populateStudentSelect();
+      if (booksOk) populateBookSelect();
+
+      if (!booksOk || !studentsOk) {
+        historyListEl.innerHTML =
+          '<p class="empty-state">マスタデータの読み込みに失敗したため、履歴を表示できません。</p>';
+        return;
+      }
+
+      if (booksCache.length === 0) {
+        showMessage(
+          "図書が登録されていません。マスタ保守の図書マスタで登録してください。",
+          "warn"
+        );
+      }
+      if (studentsCache.length === 0) {
+        showMessage(
+          "学生が登録されていません。マスタ保守の学生マスタで登録してください。",
+          "warn"
+        );
+      }
+
+      await loadHistory();
+    })();
+  </script>
+</body>
+</html>

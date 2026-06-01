@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>マスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --accent-hover: #234839;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 720px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    .nav a[aria-current="page"] {
+      color: var(--text);
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .nav--return {
+      margin-bottom: 0.35rem;
+    }
+
+    .nav--return a {
+      font-size: 0.85rem;
+    }
+
+    .header {
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .header__note {
+      margin: 0.5rem 0 0;
+      font-size: 0.9rem;
+      color: var(--warn-text);
+    }
+
+    .maintenance-banner {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .portal-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    @media (min-width: 520px) {
+      .portal-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .portal-card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .portal-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(44, 36, 22, 0.12);
+    }
+
+    .portal-card h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+
+    .portal-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .portal-card--disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav nav--return" aria-label="業務画面への復帰">
+      <a href="index.html">← 貸出・返却に戻る</a>
+    </nav>
+    <nav class="nav" aria-label="マスタ保守メニュー">
+      <a href="admin.html" aria-current="page">マスタ保守</a>
+      <a href="books.html">図書</a>
+      <a href="categories.html">カテゴリ</a>
+      <a href="students.html">学生</a>
+      <a href="masters.html">学部・学科</a>
+    </nav>
+
+    <div class="maintenance-banner" role="note">
+      マスタ保守モード — 登録データの追加・変更・削除はこのエリアで行います
+    </div>
+
+    <header class="header">
+      <h1>マスタ保守</h1>
+      <p>登録データの追加・変更・削除を行います</p>
+      <p class="header__note">※ 日常の貸出・返却はトップ画面で行ってください。</p>
+    </header>
+
+    <div class="portal-grid">
+      <a class="portal-card" href="books.html">
+        <h2>図書マスタ</h2>
+        <p>図書の登録・変更・削除</p>
+      </a>
+      <a class="portal-card" href="students.html">
+        <h2>学生マスタ</h2>
+        <p>学籍番号・氏名・学部学科・生年月日</p>
+      </a>
+      <a class="portal-card" href="masters.html">
+        <h2>学部・学科マスタ</h2>
+        <p>学部（親）と学科（子）の管理</p>
+      </a>
+      <a class="portal-card" href="categories.html">
+        <h2>図書カテゴリマスタ</h2>
+        <p>カテゴリの登録・変更・削除</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

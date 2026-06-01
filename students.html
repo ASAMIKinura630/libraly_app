@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生マスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --accent-hover: #234839;
+      --danger: #9b3b32;
+      --success-bg: #e8f3ec;
+      --success-text: #1f5c38;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --error-bg: #fdecea;
+      --error-text: #8b2e26;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 960px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    .nav a[aria-current="page"] {
+      color: var(--text);
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .nav--return {
+      margin-bottom: 0.35rem;
+    }
+
+    .nav--return a {
+      font-size: 0.85rem;
+    }
+
+    .maintenance-banner {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .header {
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .message {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .message.is-visible {
+      display: block;
+    }
+
+    .message--success { background: var(--success-bg); color: var(--success-text); }
+    .message--warn { background: var(--warn-bg); color: var(--warn-text); }
+    .message--error { background: var(--error-bg); color: var(--error-text); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-grid .form-group--full {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .edit-hint {
+      margin: 0 0 1rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+      display: none;
+    }
+
+    .edit-hint.is-visible {
+      display: block;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.5rem 1.25rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-edit {
+      background: #e8eef5;
+      color: #2a4365;
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .btn-delete {
+      background: #fce8e6;
+      color: var(--danger);
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .list-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+
+    .list-toolbar .form-group {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .list-toolbar select,
+    .list-toolbar input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .list-count {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .student-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .student-table th,
+    .student-table td {
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .student-table th {
+      font-weight: 600;
+      background: #f8f6f1;
+      white-space: nowrap;
+    }
+
+    .student-table tr.is-editing {
+      background: rgba(45, 90, 74, 0.08);
+    }
+
+    .student-table .actions {
+      white-space: nowrap;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .empty-state,
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav nav--return" aria-label="業務画面への復帰">
+      <a href="index.html">← 貸出・返却に戻る</a>
+    </nav>
+    <nav class="nav" aria-label="マスタ保守メニュー">
+      <a href="admin.html">マスタ保守</a>
+      <a href="books.html">図書</a>
+      <a href="categories.html">カテゴリ</a>
+      <a href="students.html" aria-current="page">学生</a>
+      <a href="masters.html">学部・学科</a>
+    </nav>
+
+    <div class="maintenance-banner" role="note">
+      マスタ保守モード — 学籍番号は貸出履歴と紐づきます。変更・削除は慎重に行ってください
+    </div>
+
+    <header class="header">
+      <h1>学生マスタ保守</h1>
+      <p>学生データの登録・一覧・編集・削除</p>
+    </header>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">学生の登録・編集</h2>
+      <p id="edit-hint" class="edit-hint">編集中です。内容を変更して「更新」を押してください。</p>
+
+      <form id="student-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="student-number">学籍番号 <span aria-hidden="true">*</span></label>
+            <input type="text" id="student-number" name="student_number" autocomplete="off" placeholder="例：20240001" required />
+          </div>
+          <div class="form-group">
+            <label for="student-name">氏名 <span aria-hidden="true">*</span></label>
+            <input type="text" id="student-name" name="name" autocomplete="name" placeholder="例：山田 太郎" required />
+          </div>
+          <div class="form-group">
+            <label for="faculty-id">学部 <span aria-hidden="true">*</span></label>
+            <select id="faculty-id" name="faculty_id" required>
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="department-id">学科 <span aria-hidden="true">*</span></label>
+            <select id="department-id" name="department_id" required disabled>
+              <option value="">先に学部を選択</option>
+            </select>
+          </div>
+          <div class="form-group form-group--full">
+            <label for="birth-date">生年月日 <span aria-hidden="true">*</span></label>
+            <input type="text" id="birth-date" name="birth_date" inputmode="numeric" autocomplete="off" placeholder="YYYYMMDD（例：20020415）" maxlength="8" required />
+            <span class="form-hint">8桁の数字（YYYYMMDD形式）。例：2002年4月15日 → 20020415</span>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="save-btn" class="btn btn-primary">保存</button>
+          <button type="button" id="cancel-btn" class="btn btn-secondary" hidden>キャンセル</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="list-heading">
+      <h2 id="list-heading">学生一覧</h2>
+
+      <div class="list-toolbar">
+        <div class="form-group">
+          <label for="faculty-filter">学部で絞り込み</label>
+          <select id="faculty-filter" aria-label="学部で絞り込み">
+            <option value="">すべて</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="search-input">検索</label>
+          <input type="search" id="search-input" placeholder="学籍番号・氏名" aria-label="学籍番号または氏名で検索" />
+        </div>
+      </div>
+
+      <p id="list-count" class="list-count"></p>
+      <div id="student-list" class="table-wrap">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://bpfytlurmubgmzaisonp.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZnl0bHVybXViZ216YWlzb25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTA2MzUsImV4cCI6MjA5NTI2NjYzNX0.rIimKp_spSxCuuKCJlFoa8ux4BvFodHam0S3XGTFRa0";
+
+    const TABLE_NAME = "libraly_app_student";
+    const FACULTY_TABLE = "libraly_app_faculty";
+    const DEPARTMENT_TABLE = "libraly_app_department";
+    const MESSAGE_HIDE_MS = 4000;
+
+    let editingId = null;
+    let messageTimer = null;
+    let isBusy = false;
+    let studentsCache = [];
+    let facultiesCache = [];
+    let departmentsCache = [];
+    let facultyFilter = "";
+    let searchQuery = "";
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const messageEl = document.getElementById("message");
+    const editHintEl = document.getElementById("edit-hint");
+    const studentForm = document.getElementById("student-form");
+    const studentNumberInput = document.getElementById("student-number");
+    const studentNameInput = document.getElementById("student-name");
+    const facultySelect = document.getElementById("faculty-id");
+    const departmentSelect = document.getElementById("department-id");
+    const birthDateInput = document.getElementById("birth-date");
+    const saveBtn = document.getElementById("save-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const facultyFilterEl = document.getElementById("faculty-filter");
+    const searchInput = document.getElementById("search-input");
+    const listCountEl = document.getElementById("list-count");
+    const studentListEl = document.getElementById("student-list");
+
+    function showMessage(text, type) {
+      clearTimeout(messageTimer);
+      messageEl.textContent = text;
+      messageEl.className = "message is-visible message--" + type;
+      messageTimer = setTimeout(function () {
+        messageEl.classList.remove("is-visible");
+      }, MESSAGE_HIDE_MS);
+    }
+
+    function setBusy(busy) {
+      isBusy = busy;
+      saveBtn.disabled = busy;
+      cancelBtn.disabled = busy;
+      facultyFilterEl.disabled = busy;
+      searchInput.disabled = busy;
+      facultySelect.disabled = busy;
+      if (!busy && !facultySelect.value) {
+        departmentSelect.disabled = true;
+      } else if (!busy) {
+        departmentSelect.disabled = false;
+      } else {
+        departmentSelect.disabled = busy;
+      }
+      studentListEl.querySelectorAll("button").forEach(function (btn) {
+        btn.disabled = busy;
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatBirthDateDisplay(birthDate) {
+      if (!/^\d{8}$/.test(birthDate)) return birthDate;
+      return birthDate.slice(0, 4) + "/" + birthDate.slice(4, 6) + "/" + birthDate.slice(6, 8);
+    }
+
+    function isValidBirthDate(value) {
+      if (!/^\d{8}$/.test(value)) return false;
+      const y = parseInt(value.slice(0, 4), 10);
+      const m = parseInt(value.slice(4, 6), 10);
+      const d = parseInt(value.slice(6, 8), 10);
+      const date = new Date(y, m - 1, d);
+      return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+    }
+
+    function getFacultyName(student) {
+      const dept = student.libraly_app_department;
+      if (dept && dept.libraly_app_faculty && dept.libraly_app_faculty.name) {
+        return dept.libraly_app_faculty.name;
+      }
+      if (student.department_id) {
+        const d = departmentsCache.find(function (x) {
+          return x.id === student.department_id;
+        });
+        if (d) {
+          const f = facultiesCache.find(function (x) {
+            return x.id === d.faculty_id;
+          });
+          if (f) return f.name;
+        }
+      }
+      return "—";
+    }
+
+    function getDepartmentName(student) {
+      if (student.libraly_app_department && student.libraly_app_department.name) {
+        return student.libraly_app_department.name;
+      }
+      if (student.department_id) {
+        const d = departmentsCache.find(function (x) {
+          return x.id === student.department_id;
+        });
+        if (d) return d.name;
+      }
+      return "—";
+    }
+
+    function getFacultyIdFromDepartment(departmentId) {
+      const d = departmentsCache.find(function (x) {
+        return x.id === departmentId;
+      });
+      return d ? d.faculty_id : "";
+    }
+
+    function populateFacultySelect(selectedId) {
+      facultySelect.innerHTML = '<option value="">選択してください</option>';
+      facultiesCache.forEach(function (f) {
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = f.name;
+        facultySelect.appendChild(opt);
+      });
+      if (selectedId) facultySelect.value = selectedId;
+    }
+
+    function populateDepartmentSelect(facultyId, selectedDepartmentId) {
+      departmentSelect.innerHTML = "";
+      if (!facultyId) {
+        departmentSelect.innerHTML = '<option value="">先に学部を選択</option>';
+        departmentSelect.disabled = true;
+        return;
+      }
+      departmentSelect.disabled = isBusy;
+      departmentSelect.innerHTML = '<option value="">選択してください</option>';
+      departmentsCache
+        .filter(function (d) {
+          return d.faculty_id === facultyId;
+        })
+        .forEach(function (d) {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.name;
+          departmentSelect.appendChild(opt);
+        });
+      if (selectedDepartmentId) departmentSelect.value = selectedDepartmentId;
+    }
+
+    async function loadMasters() {
+      const [facultyRes, deptRes] = await Promise.all([
+        supabaseClient.from(FACULTY_TABLE).select("id, name").order("name", { ascending: true }),
+        supabaseClient
+          .from(DEPARTMENT_TABLE)
+          .select("id, name, faculty_id")
+          .order("name", { ascending: true }),
+      ]);
+
+      if (facultyRes.error || deptRes.error) {
+        console.error(facultyRes.error || deptRes.error);
+        showMessage("学部・学科マスタの取得に失敗しました。", "error");
+        return false;
+      }
+
+      facultiesCache = facultyRes.data || [];
+      departmentsCache = deptRes.data || [];
+      populateFacultySelect();
+      populateDepartmentSelect("", "");
+      updateFacultyFilterOptions();
+      return true;
+    }
+
+    function getFormValues() {
+      return {
+        student_number: studentNumberInput.value.trim(),
+        name: studentNameInput.value.trim(),
+        department_id: departmentSelect.value,
+        birth_date: birthDateInput.value.trim(),
+      };
+    }
+
+    function validateForm() {
+      const values = getFormValues();
+      if (!values.student_number || !values.name || !values.department_id || !values.birth_date) {
+        showMessage("すべての項目を入力してください。学部・学科も選択してください。", "warn");
+        return null;
+      }
+      if (!isValidBirthDate(values.birth_date)) {
+        showMessage("生年月日は YYYYMMDD 形式の有効な日付で入力してください。（例：20020415）", "warn");
+        return null;
+      }
+      return values;
+    }
+
+    function clearForm() {
+      studentForm.reset();
+      editingId = null;
+      saveBtn.textContent = "保存";
+      editHintEl.classList.remove("is-visible");
+      cancelBtn.hidden = true;
+      populateFacultySelect();
+      populateDepartmentSelect("", "");
+      studentListEl.querySelectorAll(".is-editing").forEach(function (el) {
+        el.classList.remove("is-editing");
+      });
+    }
+
+    function enterEditMode(student) {
+      editingId = student.id;
+      studentNumberInput.value = student.student_number;
+      studentNameInput.value = student.name;
+      birthDateInput.value = student.birth_date;
+      const facultyId = getFacultyIdFromDepartment(student.department_id);
+      populateFacultySelect(facultyId);
+      populateDepartmentSelect(facultyId, student.department_id);
+      saveBtn.textContent = "更新";
+      editHintEl.classList.add("is-visible");
+      cancelBtn.hidden = false;
+      studentNumberInput.focus();
+      renderStudentList();
+      showMessage("「" + student.name + "」を編集しています。", "warn");
+    }
+
+    function updateFacultyFilterOptions() {
+      const current = facultyFilterEl.value;
+      facultyFilterEl.innerHTML = '<option value="">すべて</option>';
+      facultiesCache.forEach(function (f) {
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = f.name;
+        facultyFilterEl.appendChild(opt);
+      });
+      if (current && facultyFilterEl.querySelector('option[value="' + current + '"]')) {
+        facultyFilterEl.value = current;
+      }
+    }
+
+    function getFilteredStudents() {
+      let list = studentsCache.slice();
+      if (facultyFilter) {
+        list = list.filter(function (s) {
+          const fid = getFacultyIdFromDepartment(s.department_id);
+          return fid === facultyFilter;
+        });
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(function (s) {
+          return (
+            s.student_number.toLowerCase().indexOf(q) !== -1 ||
+            s.name.toLowerCase().indexOf(q) !== -1
+          );
+        });
+      }
+      return list;
+    }
+
+    function renderStudentList() {
+      if (studentsCache.length === 0) {
+        listCountEl.textContent = "";
+        studentListEl.innerHTML =
+          '<p class="empty-state">学生がまだ登録されていません。<br>上のフォームから登録してください。</p>';
+        return;
+      }
+
+      const filtered = getFilteredStudents();
+      listCountEl.textContent =
+        "表示：" + filtered.length + " 件 / 全 " + studentsCache.length + " 件";
+
+      if (filtered.length === 0) {
+        studentListEl.innerHTML =
+          '<p class="empty-state">条件に一致する学生がいません。<br>絞り込みや検索条件を変更してください。</p>';
+        return;
+      }
+
+      studentListEl.innerHTML =
+        '<table class="student-table">' +
+        "<thead><tr>" +
+        "<th>学籍番号</th><th>氏名</th><th>学部</th><th>学科</th><th>生年月日</th><th>操作</th>" +
+        "</tr></thead><tbody>" +
+        filtered
+          .map(function (s) {
+            const isEditing = editingId === s.id;
+            return (
+              "<tr" +
+              (isEditing ? ' class="is-editing"' : "") +
+              ' data-id="' +
+              escapeHtml(s.id) +
+              '">' +
+              "<td>" +
+              escapeHtml(s.student_number) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(s.name) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getFacultyName(s)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getDepartmentName(s)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(formatBirthDateDisplay(s.birth_date)) +
+              "</td>" +
+              '<td class="actions">' +
+              '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
+              '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
+              "</td></tr>"
+            );
+          })
+          .join("") +
+        "</tbody></table>";
+    }
+
+    async function loadStudents() {
+      studentListEl.innerHTML = '<p class="loading">読み込み中…</p>';
+
+      const { data, error } = await supabaseClient
+        .from(TABLE_NAME)
+        .select(
+          "id, student_number, name, department_id, birth_date, created_at, " +
+            "libraly_app_department ( id, name, faculty_id, libraly_app_faculty ( id, name ) )"
+        )
+        .order("student_number", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        studentsCache = [];
+        studentListEl.innerHTML = "";
+        listCountEl.textContent = "";
+        showMessage("データの取得に失敗しました。接続を確認してください。", "error");
+        return;
+      }
+
+      studentsCache = data || [];
+      updateFacultyFilterOptions();
+      renderStudentList();
+    }
+
+    async function saveStudent() {
+      const values = validateForm();
+      if (!values) return;
+
+      setBusy(true);
+
+      try {
+        if (editingId) {
+          const { error } = await supabaseClient
+            .from(TABLE_NAME)
+            .update(values)
+            .eq("id", editingId);
+          if (error) throw error;
+          clearForm();
+          await loadStudents();
+          showMessage("学生情報を更新しました。", "success");
+        } else {
+          const { error } = await supabaseClient.from(TABLE_NAME).insert(values);
+          if (error) throw error;
+          clearForm();
+          await loadStudents();
+          showMessage("学生を登録しました。", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        if (err.code === "23505") {
+          showMessage("この学籍番号は既に登録されています。", "error");
+        } else if (err.code === "23514") {
+          showMessage("生年月日が不正です。YYYYMMDD 形式で入力してください。", "error");
+        } else {
+          showMessage("処理に失敗しました。もう一度お試しください。", "error");
+        }
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function deleteStudent(id, name) {
+      const ok = window.confirm(
+        "この学生を削除しますか？\n貸出履歴がある学生は削除できません。"
+      );
+      if (!ok) return;
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient.from(TABLE_NAME).delete().eq("id", id);
+        if (error) throw error;
+        if (editingId === id) clearForm();
+        await loadStudents();
+        showMessage("学生を削除しました。", "success");
+      } catch (err) {
+        console.error(err);
+        showMessage("削除に失敗しました。もう一度お試しください。", "error");
+        await loadStudents();
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    studentForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!isBusy) saveStudent();
+    });
+
+    cancelBtn.addEventListener("click", function () {
+      clearForm();
+      renderStudentList();
+      showMessage("編集をキャンセルしました。", "warn");
+    });
+
+    facultySelect.addEventListener("change", function () {
+      populateDepartmentSelect(facultySelect.value, "");
+    });
+
+    facultyFilterEl.addEventListener("change", function () {
+      facultyFilter = facultyFilterEl.value;
+      renderStudentList();
+    });
+
+    searchInput.addEventListener("input", function () {
+      searchQuery = searchInput.value.trim();
+      renderStudentList();
+    });
+
+    studentListEl.addEventListener("click", async function (e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn || isBusy) return;
+
+      const row = btn.closest("tr[data-id]");
+      if (!row) return;
+
+      const id = row.dataset.id;
+      const student = studentsCache.find(function (s) {
+        return s.id === id;
+      });
+
+      if (!student) {
+        showMessage("学生データの取得に失敗しました。", "error");
+        return;
+      }
+
+      if (btn.dataset.action === "edit") {
+        enterEditMode(student);
+        studentForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      if (btn.dataset.action === "delete") {
+        await deleteStudent(id, student.name);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", async function () {
+      setBusy(true);
+      await loadMasters();
+      await loadStudents();
+      setBusy(false);
+    });
+  </script>
+</body>
+</html>

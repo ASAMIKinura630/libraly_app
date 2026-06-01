@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>図書カテゴリマスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --accent-hover: #234839;
+      --danger: #9b3b32;
+      --success-bg: #e8f3ec;
+      --success-text: #1f5c38;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --error-bg: #fdecea;
+      --error-text: #8b2e26;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 720px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    .nav a[aria-current="page"] {
+      color: var(--text);
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .nav--return {
+      margin-bottom: 0.35rem;
+    }
+
+    .nav--return a {
+      font-size: 0.85rem;
+    }
+
+    .maintenance-banner {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .header {
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .message {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .message.is-visible {
+      display: block;
+    }
+
+    .message--success { background: var(--success-bg); color: var(--success-text); }
+    .message--warn { background: var(--warn-bg); color: var(--warn-text); }
+    .message--error { background: var(--error-bg); color: var(--error-text); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .edit-hint {
+      margin: 0 0 1rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+      display: none;
+    }
+
+    .edit-hint.is-visible {
+      display: block;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      align-items: flex-end;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 180px;
+      margin: 0;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .form-group input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.5rem 1.25rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-edit {
+      background: #e8eef5;
+      color: #2a4365;
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .btn-delete {
+      background: #fce8e6;
+      color: var(--danger);
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .master-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .master-table th,
+    .master-table td {
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .master-table th {
+      font-weight: 600;
+      background: #f8f6f1;
+    }
+
+    .master-table tr.is-editing {
+      background: rgba(45, 90, 74, 0.08);
+    }
+
+    .master-table .actions {
+      white-space: nowrap;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .empty-state,
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="nav nav--return" aria-label="業務画面への復帰">
+      <a href="index.html">← 貸出・返却に戻る</a>
+    </nav>
+    <nav class="nav" aria-label="マスタ保守メニュー">
+      <a href="admin.html">マスタ保守</a>
+      <a href="books.html">図書</a>
+      <a href="categories.html" aria-current="page">カテゴリ</a>
+      <a href="students.html">学生</a>
+      <a href="masters.html">学部・学科</a>
+    </nav>
+
+    <div class="maintenance-banner" role="note">
+      マスタ保守モード — 変更内容は図書マスタのカテゴリ選択肢に反映されます
+    </div>
+
+    <header class="header">
+      <h1>図書カテゴリマスタ保守</h1>
+      <p>図書カテゴリの登録・一覧・編集・削除</p>
+    </header>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">カテゴリの登録・編集</h2>
+      <p id="edit-hint" class="edit-hint">編集中です。内容を変更して「更新」を押してください。</p>
+
+      <form id="category-form" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="category-name">カテゴリ名 <span aria-hidden="true">*</span></label>
+            <input type="text" id="category-name" placeholder="例：小説" required autocomplete="off" />
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="save-btn" class="btn btn-primary">保存</button>
+            <button type="button" id="cancel-btn" class="btn btn-secondary" hidden>キャンセル</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="category-list" class="table-wrap" style="margin-top: 1rem">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://bpfytlurmubgmzaisonp.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZnl0bHVybXViZ216YWlzb25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTA2MzUsImV4cCI6MjA5NTI2NjYzNX0.rIimKp_spSxCuuKCJlFoa8ux4BvFodHam0S3XGTFRa0";
+
+    const TABLE_NAME = "libraly_app_category";
+    const MESSAGE_HIDE_MS = 4000;
+
+    let messageTimer = null;
+    let isBusy = false;
+    let editingId = null;
+    let categoriesCache = [];
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const messageEl = document.getElementById("message");
+    const categoryForm = document.getElementById("category-form");
+    const categoryNameInput = document.getElementById("category-name");
+    const saveBtn = document.getElementById("save-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const editHintEl = document.getElementById("edit-hint");
+    const categoryListEl = document.getElementById("category-list");
+
+    function showMessage(text, type) {
+      clearTimeout(messageTimer);
+      messageEl.textContent = text;
+      messageEl.className = "message is-visible message--" + type;
+      messageTimer = setTimeout(function () {
+        messageEl.classList.remove("is-visible");
+      }, MESSAGE_HIDE_MS);
+    }
+
+    function setBusy(busy) {
+      isBusy = busy;
+      saveBtn.disabled = busy;
+      cancelBtn.disabled = busy;
+      categoryNameInput.disabled = busy;
+      categoryListEl.querySelectorAll("button").forEach(function (btn) {
+        btn.disabled = busy;
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatDate(isoString) {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return isoString;
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function clearForm() {
+      categoryForm.reset();
+      editingId = null;
+      saveBtn.textContent = "保存";
+      editHintEl.classList.remove("is-visible");
+      cancelBtn.hidden = true;
+      renderCategoryList();
+    }
+
+    function enterEditMode(category) {
+      editingId = category.id;
+      categoryNameInput.value = category.name;
+      saveBtn.textContent = "更新";
+      editHintEl.classList.add("is-visible");
+      cancelBtn.hidden = false;
+      categoryNameInput.focus();
+      renderCategoryList();
+      showMessage("「" + category.name + "」を編集しています。", "warn");
+    }
+
+    function renderCategoryList() {
+      if (categoriesCache.length === 0) {
+        categoryListEl.innerHTML =
+          '<p class="empty-state">カテゴリがまだ登録されていません。<br>上のフォームから登録してください。</p>';
+        return;
+      }
+
+      categoryListEl.innerHTML =
+        '<table class="master-table"><thead><tr>' +
+        "<th>カテゴリ名</th><th>登録日時</th><th>操作</th></tr></thead><tbody>" +
+        categoriesCache
+          .map(function (c) {
+            return (
+              "<tr" +
+              (editingId === c.id ? ' class="is-editing"' : "") +
+              ' data-id="' +
+              escapeHtml(c.id) +
+              '">' +
+              "<td>" +
+              escapeHtml(c.name) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(formatDate(c.created_at)) +
+              "</td>" +
+              '<td class="actions">' +
+              '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
+              '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
+              "</td></tr>"
+            );
+          })
+          .join("") +
+        "</tbody></table>";
+    }
+
+    async function loadCategories() {
+      categoryListEl.innerHTML = '<p class="loading">読み込み中…</p>';
+
+      const { data, error } = await supabaseClient
+        .from(TABLE_NAME)
+        .select("id, name, created_at")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        categoriesCache = [];
+        categoryListEl.innerHTML =
+          '<p class="empty-state">データの取得に失敗しました。<br>sql/20260525_07_grant_category_crud.sql を実行しているか確認してください。</p>';
+        showMessage("カテゴリの取得に失敗しました。", "error");
+        return;
+      }
+
+      categoriesCache = data || [];
+      renderCategoryList();
+    }
+
+    async function saveCategory() {
+      const name = categoryNameInput.value.trim();
+      if (!name) {
+        showMessage("カテゴリ名を入力してください。", "warn");
+        return;
+      }
+
+      setBusy(true);
+
+      try {
+        if (editingId) {
+          const { error } = await supabaseClient
+            .from(TABLE_NAME)
+            .update({ name: name })
+            .eq("id", editingId);
+          if (error) throw error;
+          clearForm();
+          await loadCategories();
+          showMessage("カテゴリを更新しました。", "success");
+        } else {
+          const { error } = await supabaseClient.from(TABLE_NAME).insert({ name: name });
+          if (error) throw error;
+          clearForm();
+          await loadCategories();
+          showMessage("カテゴリを登録しました。", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        if (err.code === "23505") {
+          showMessage("同じカテゴリ名が既に登録されています。", "error");
+        } else {
+          showMessage("処理に失敗しました。もう一度お試しください。", "error");
+        }
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function deleteCategory(id) {
+      const ok = window.confirm(
+        "このカテゴリを削除しますか？\n紐づく図書のカテゴリは未設定になります。"
+      );
+      if (!ok) return;
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient.from(TABLE_NAME).delete().eq("id", id);
+        if (error) throw error;
+        if (editingId === id) clearForm();
+        await loadCategories();
+        showMessage("カテゴリを削除しました。", "success");
+      } catch (err) {
+        console.error(err);
+        showMessage("削除に失敗しました。もう一度お試しください。", "error");
+        await loadCategories();
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    categoryForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!isBusy) saveCategory();
+    });
+
+    cancelBtn.addEventListener("click", function () {
+      clearForm();
+      showMessage("編集をキャンセルしました。", "warn");
+    });
+
+    categoryListEl.addEventListener("click", function (e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn || isBusy) return;
+
+      const row = btn.closest("tr[data-id]");
+      if (!row) return;
+
+      const id = row.getAttribute("data-id");
+      const category = categoriesCache.find(function (c) {
+        return c.id === id;
+      });
+      if (!category) return;
+
+      if (btn.getAttribute("data-action") === "edit") {
+        enterEditMode(category);
+        return;
+      }
+
+      if (btn.getAttribute("data-action") === "delete") {
+        deleteCategory(id);
+      }
+    });
+
+    loadCategories();
+  </script>
+</body>
+</html>
