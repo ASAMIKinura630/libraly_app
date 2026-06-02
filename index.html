@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>貸出・返却 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <link rel="stylesheet" href="css/auth-bar.css" />
   <style>
     *,
     *::before,
@@ -126,6 +128,21 @@
       margin: 0;
       font-size: 1.1rem;
       font-weight: 600;
+    }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 1rem;
+      margin-bottom: 0;
+    }
+
+    .card-header__hint {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--muted);
     }
 
     .lend-panels,
@@ -374,10 +391,139 @@
       padding: 2rem 1rem;
       margin: 0;
     }
+
+    .auth-gate {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .auth-gate.is-hidden {
+      display: none;
+    }
+
+    #app-main.is-hidden {
+      display: none;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .auth-tabs button {
+      flex: 1;
+      min-height: 44px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .auth-tabs button.is-active {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .auth-panel.is-hidden {
+      display: none;
+    }
+
+    .auth-gate .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .auth-gate .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .auth-gate .form-group input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .auth-gate .btn-auth {
+      width: 100%;
+      min-height: 44px;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .auth-gate .btn-auth:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .auth-gate .btn-auth:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
   <div class="app">
+    <section id="auth-gate" class="auth-gate" aria-labelledby="auth-gate-heading">
+      <header class="header">
+        <h1 id="auth-gate-heading">図書館保守システム</h1>
+        <p>メールアドレスとパスワードでログインしてください</p>
+      </header>
+
+      <div class="auth-tabs" role="tablist" aria-label="認証モード">
+        <button type="button" id="auth-tab-login" class="is-active" role="tab" aria-selected="true" aria-controls="auth-panel-login">ログイン</button>
+        <button type="button" id="auth-tab-signup" role="tab" aria-selected="false" aria-controls="auth-panel-signup">新規登録</button>
+      </div>
+
+      <div id="auth-panel-login" class="card auth-panel" role="tabpanel" aria-labelledby="auth-tab-login">
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="login-email">メールアドレス</label>
+            <input type="email" id="login-email" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">パスワード</label>
+            <input type="password" id="login-password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" id="login-submit" class="btn-auth">ログイン</button>
+        </form>
+      </div>
+
+      <div id="auth-panel-signup" class="card auth-panel is-hidden" role="tabpanel" aria-labelledby="auth-tab-signup" hidden>
+        <form id="signup-form" novalidate>
+          <div class="form-group">
+            <label for="signup-email">メールアドレス</label>
+            <input type="email" id="signup-email" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label for="signup-password">パスワード</label>
+            <input type="password" id="signup-password" autocomplete="new-password" required />
+            <span class="form-hint">6文字以上</span>
+          </div>
+          <button type="submit" id="signup-submit" class="btn-auth">登録する</button>
+        </form>
+      </div>
+    </section>
+
+    <div id="app-main" class="is-hidden">
+    <div id="auth-bar"></div>
     <nav class="nav nav--ops" aria-label="メインメニュー">
       <a href="index.html" aria-current="page">貸出・返却</a>
       <a href="admin.html" class="nav__admin-link">マスタ保守 →</a>
@@ -391,7 +537,10 @@
     <div id="message" class="message" role="status" aria-live="polite"></div>
 
     <section class="card" aria-labelledby="lend-heading">
-      <h2 id="lend-heading">貸出登録</h2>
+      <div class="card-header">
+        <h2 id="lend-heading">貸出登録</h2>
+        <p class="card-header__hint">条件を選択して図書と学生を指定してください</p>
+      </div>
 
       <form id="lend-form" novalidate>
         <div class="lend-panels">
@@ -488,14 +637,11 @@
         <p class="loading">読み込み中…</p>
       </div>
     </section>
+    </div>
   </div>
 
   <script>
     // .env.local と同じ値に設定してください
-    const SUPABASE_URL = "https://bpfytlurmubgmzaisonp.supabase.co";
-    const SUPABASE_ANON_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZnl0bHVybXViZ216YWlzb25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTA2MzUsImV4cCI6MjA5NTI2NjYzNX0.rIimKp_spSxCuuKCJlFoa8ux4BvFodHam0S3XGTFRa0";
-
     const HISTORY_TABLE = "libraly_app_lending_history";
     const BOOK_TABLE = "libraly_app";
     const STUDENT_TABLE = "libraly_app_student";
@@ -1131,9 +1277,105 @@
       }
     });
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = LibralyAuth.getClient();
 
-    (async function init() {
+    const authGateEl = document.getElementById("auth-gate");
+    const appMainEl = document.getElementById("app-main");
+    const authTabLogin = document.getElementById("auth-tab-login");
+    const authTabSignup = document.getElementById("auth-tab-signup");
+    const authPanelLogin = document.getElementById("auth-panel-login");
+    const authPanelSignup = document.getElementById("auth-panel-signup");
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const loginSubmitBtn = document.getElementById("login-submit");
+    const signupSubmitBtn = document.getElementById("signup-submit");
+
+    function showAuthGate() {
+      authGateEl.classList.remove("is-hidden");
+      appMainEl.classList.add("is-hidden");
+      document.title = "ログイン | 図書館保守システム";
+    }
+
+    function showAppMain() {
+      authGateEl.classList.add("is-hidden");
+      appMainEl.classList.remove("is-hidden");
+      document.title = "貸出・返却 | 図書館保守システム";
+    }
+
+    function setAuthTab(mode) {
+      const isLogin = mode === "login";
+      authTabLogin.classList.toggle("is-active", isLogin);
+      authTabSignup.classList.toggle("is-active", !isLogin);
+      authTabLogin.setAttribute("aria-selected", isLogin ? "true" : "false");
+      authTabSignup.setAttribute("aria-selected", isLogin ? "false" : "true");
+      authPanelLogin.classList.toggle("is-hidden", !isLogin);
+      authPanelSignup.classList.toggle("is-hidden", isLogin);
+      authPanelLogin.hidden = !isLogin;
+      authPanelSignup.hidden = isLogin;
+    }
+
+    function readAuthCredentials(emailId, passwordId) {
+      return {
+        email: document.getElementById(emailId).value.trim(),
+        password: document.getElementById(passwordId).value,
+      };
+    }
+
+    function validateAuthInput(email, password) {
+      if (!email) {
+        alert("メールアドレスを入力してください。");
+        return false;
+      }
+      if (!LibralyAuth.validatePassword(password)) {
+        alert("パスワードは6文字以上で入力してください。");
+        return false;
+      }
+      return true;
+    }
+
+    authTabLogin.addEventListener("click", function () {
+      setAuthTab("login");
+    });
+    authTabSignup.addEventListener("click", function () {
+      setAuthTab("signup");
+    });
+
+    loginForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const cred = readAuthCredentials("login-email", "login-password");
+      if (!validateAuthInput(cred.email, cred.password)) return;
+
+      loginSubmitBtn.disabled = true;
+      const { error } = await supabaseClient.auth.signInWithPassword(cred);
+      loginSubmitBtn.disabled = false;
+
+      if (error) {
+        alert(LibralyAuth.authErrorMessage(error));
+        return;
+      }
+      await startApp();
+    });
+
+    signupForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const cred = readAuthCredentials("signup-email", "signup-password");
+      if (!validateAuthInput(cred.email, cred.password)) return;
+
+      signupSubmitBtn.disabled = true;
+      const { error } = await supabaseClient.auth.signUp(cred);
+      signupSubmitBtn.disabled = false;
+
+      if (error) {
+        alert(LibralyAuth.authErrorMessage(error));
+        return;
+      }
+      await startApp();
+    });
+
+    async function startApp() {
+      showAppMain();
+      await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+
       const [booksOk, studentsOk] = await Promise.all([
         loadBooks(),
         loadStudents(),
@@ -1163,6 +1405,15 @@
       }
 
       await loadHistory();
+    }
+
+    (async function init() {
+      const session = await LibralyAuth.getSession();
+      if (!session) {
+        showAuthGate();
+        return;
+      }
+      await startApp();
     })();
   </script>
 </body>

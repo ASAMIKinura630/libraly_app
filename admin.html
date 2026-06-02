@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>マスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <link rel="stylesheet" href="css/auth-bar.css" />
   <style>
     *,
     *::before,
@@ -154,6 +157,7 @@
 </head>
 <body>
   <div class="app">
+    <div id="auth-bar"></div>
     <nav class="nav nav--return" aria-label="業務画面への復帰">
       <a href="index.html">← 貸出・返却に戻る</a>
     </nav>
@@ -194,5 +198,12 @@
       </a>
     </div>
   </div>
+
+  <script>
+    (async function init() {
+      if (!(await LibralyAuth.requireAuth())) return;
+      await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+    })();
+  </script>
 </body>
 </html>

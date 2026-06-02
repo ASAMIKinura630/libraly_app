@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>学部・学科マスタ保守 | マスタ保守 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <link rel="stylesheet" href="css/auth-bar.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -248,6 +250,7 @@
 </head>
 <body>
   <div class="app">
+    <div id="auth-bar"></div>
     <nav class="nav nav--return" aria-label="業務画面への復帰">
       <a href="index.html">← 貸出・返却に戻る</a>
     </nav>
@@ -329,10 +332,6 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://bpfytlurmubgmzaisonp.supabase.co";
-    const SUPABASE_ANON_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZnl0bHVybXViZ216YWlzb25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTA2MzUsImV4cCI6MjA5NTI2NjYzNX0.rIimKp_spSxCuuKCJlFoa8ux4BvFodHam0S3XGTFRa0";
-
     const FACULTY_TABLE = "libraly_app_faculty";
     const DEPARTMENT_TABLE = "libraly_app_department";
     const MESSAGE_HIDE_MS = 4000;
@@ -345,7 +344,7 @@
     let departmentsCache = [];
     let deptListFilter = "";
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = LibralyAuth.getClient();
 
     const messageEl = document.getElementById("message");
     const facultyForm = document.getElementById("faculty-form");
@@ -757,6 +756,8 @@
     });
 
     document.addEventListener("DOMContentLoaded", async function () {
+      if (!(await LibralyAuth.requireAuth())) return;
+      await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
       setBusy(true);
       await loadFaculties();
       await loadDepartments();
