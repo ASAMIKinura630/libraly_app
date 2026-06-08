@@ -110,13 +110,29 @@
       margin-bottom: 1.25rem;
     }
 
-    .portal-grid {
+    .portal-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .portal-group__title {
+      margin: 0 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .portal-group__grid {
       display: grid;
       gap: 1rem;
+      grid-template-columns: 1fr;
     }
 
     @media (min-width: 520px) {
-      .portal-grid {
+      .portal-group__grid {
         grid-template-columns: 1fr 1fr;
       }
     }
@@ -138,7 +154,7 @@
       box-shadow: 0 4px 16px rgba(44, 36, 22, 0.12);
     }
 
-    .portal-card h2 {
+    .portal-card h3 {
       margin: 0 0 0.35rem;
       font-size: 1.05rem;
       color: var(--accent);
@@ -173,27 +189,44 @@
       <p class="header__note">※ 日常の貸出・返却はトップ画面で行ってください。</p>
     </header>
 
-    <div class="portal-grid">
-      <a class="portal-card" href="books.html">
-        <h2>図書マスタ</h2>
-        <p>図書の登録・変更・削除</p>
-      </a>
-      <a class="portal-card" href="students.html">
-        <h2>学生マスタ</h2>
-        <p>学籍番号・氏名・学部学科・生年月日</p>
-      </a>
-      <a class="portal-card" href="staff.html">
-        <h2>担当者マスタ</h2>
-        <p>職員番号・氏名・ログインメール</p>
-      </a>
-      <a class="portal-card" href="masters.html">
-        <h2>学部・学科マスタ</h2>
-        <p>学部（親）と学科（子）の管理</p>
-      </a>
-      <a class="portal-card" href="categories.html">
-        <h2>図書カテゴリマスタ</h2>
-        <p>カテゴリの登録・変更・削除</p>
-      </a>
+    <div class="portal-groups">
+      <section class="portal-group" aria-labelledby="portal-group-books">
+        <h2 class="portal-group__title" id="portal-group-books">図書・図書カテゴリ</h2>
+        <div class="portal-group__grid">
+          <a class="portal-card" href="books.html">
+            <h3>図書マスタ</h3>
+            <p>図書の登録・変更・削除</p>
+          </a>
+          <a class="portal-card" href="categories.html">
+            <h3>図書カテゴリマスタ</h3>
+            <p>カテゴリの登録・変更・削除</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="portal-group" aria-labelledby="portal-group-students">
+        <h2 class="portal-group__title" id="portal-group-students">学生・学部</h2>
+        <div class="portal-group__grid">
+          <a class="portal-card" href="students.html">
+            <h3>学生マスタ</h3>
+            <p>学籍番号・氏名・学部学科・生年月日</p>
+          </a>
+          <a class="portal-card" href="masters.html">
+            <h3>学部・学科マスタ</h3>
+            <p>学部（親）と学科（子）の管理</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="portal-group" aria-labelledby="portal-group-staff">
+        <h2 class="portal-group__title" id="portal-group-staff">担当者</h2>
+        <div class="portal-group__grid">
+          <a class="portal-card" href="staff.html">
+            <h3>担当者マスタ</h3>
+            <p>職員番号・氏名・ログインメール</p>
+          </a>
+        </div>
+      </section>
     </div>
   </div>
 
