@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>担当者マスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <link rel="stylesheet" href="css/auth-bar.css" />
+  <link rel="stylesheet" href="css/global-nav.css" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --accent-hover: #234839;
+      --danger: #9b3b32;
+      --success-bg: #e8f3ec;
+      --success-text: #1f5c38;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --error-bg: #fdecea;
+      --error-text: #8b2e26;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 960px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .maintenance-banner {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .message {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .message.is-visible { display: block; }
+    .message--success { background: var(--success-bg); color: var(--success-text); }
+    .message--warn { background: var(--warn-bg); color: var(--warn-text); }
+    .message--error { background: var(--error-bg); color: var(--error-text); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-grid .form-group--full {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .edit-hint {
+      margin: 0 0 1rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+      display: none;
+    }
+
+    .edit-hint.is-visible { display: block; }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.5rem 1.25rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-edit {
+      background: #e8eef5;
+      color: #2a4365;
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+    .btn-delete {
+      background: #fce8e6;
+      color: var(--danger);
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .master-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .master-table th,
+    .master-table td {
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .master-table th {
+      font-weight: 600;
+      background: #f8f6f1;
+      white-space: nowrap;
+    }
+
+    .master-table tr.is-editing {
+      background: rgba(45, 90, 74, 0.08);
+    }
+
+    .master-table .actions {
+      white-space: nowrap;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .empty-state,
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="auth-bar"></div>
+    <div id="global-nav"></div>
+    <div id="sub-nav"></div>
+
+    <div class="maintenance-banner" role="note">
+      マスタ保守モード — ログインメールと一致する担当者のみ、貸出・返却の処理者として記録されます
+    </div>
+
+    <header class="header">
+      <h1>担当者マスタ保守</h1>
+      <p>職員番号・氏名・ログインメールの登録・一覧・編集・削除</p>
+    </header>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">担当者の登録・編集</h2>
+      <p id="edit-hint" class="edit-hint">編集中です。内容を変更して「更新」を押してください。</p>
+
+      <form id="staff-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="staff-number">職員番号 <span aria-hidden="true">*</span></label>
+            <input type="text" id="staff-number" autocomplete="off" placeholder="例：S001" required />
+          </div>
+          <div class="form-group">
+            <label for="staff-name">氏名 <span aria-hidden="true">*</span></label>
+            <input type="text" id="staff-name" autocomplete="name" placeholder="例：山田 太郎" required />
+          </div>
+          <div class="form-group form-group--full">
+            <label for="staff-email">ログインメール <span aria-hidden="true">*</span></label>
+            <input type="email" id="staff-email" autocomplete="email" placeholder="例：yamada@example.com" required />
+            <span class="form-hint">Supabase Auth でログインするメールアドレスと同一にしてください</span>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="save-btn" class="btn btn-primary">保存</button>
+          <button type="button" id="cancel-btn" class="btn btn-secondary" hidden>キャンセル</button>
+        </div>
+      </form>
+
+      <div id="staff-list" class="table-wrap" style="margin-top: 1rem">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const TABLE_NAME = LibralyAuth.STAFF_TABLE;
+    const MESSAGE_HIDE_MS = 4000;
+
+    let messageTimer = null;
+    let isBusy = false;
+    let editingId = null;
+    let staffCache = [];
+
+    const supabaseClient = LibralyAuth.getClient();
+
+    const messageEl = document.getElementById("message");
+    const staffForm = document.getElementById("staff-form");
+    const staffNumberInput = document.getElementById("staff-number");
+    const staffNameInput = document.getElementById("staff-name");
+    const staffEmailInput = document.getElementById("staff-email");
+    const saveBtn = document.getElementById("save-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const editHintEl = document.getElementById("edit-hint");
+    const staffListEl = document.getElementById("staff-list");
+
+    function showMessage(text, type) {
+      clearTimeout(messageTimer);
+      messageEl.textContent = text;
+      messageEl.className = "message is-visible message--" + type;
+      messageTimer = setTimeout(function () {
+        messageEl.classList.remove("is-visible");
+      }, MESSAGE_HIDE_MS);
+    }
+
+    function setBusy(busy) {
+      isBusy = busy;
+      saveBtn.disabled = busy;
+      cancelBtn.disabled = busy;
+      staffNumberInput.disabled = busy;
+      staffNameInput.disabled = busy;
+      staffEmailInput.disabled = busy;
+      staffListEl.querySelectorAll("button").forEach(function (btn) {
+        btn.disabled = busy;
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatDate(isoString) {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return isoString;
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function getFormValues() {
+      return {
+        staff_number: staffNumberInput.value.trim(),
+        name: staffNameInput.value.trim(),
+        email: staffEmailInput.value.trim().toLowerCase(),
+      };
+    }
+
+    function validateForm() {
+      const values = getFormValues();
+      if (!values.staff_number || !values.name || !values.email) {
+        showMessage("職員番号・氏名・ログインメールを入力してください。", "warn");
+        return null;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+        showMessage("ログインメールの形式が正しくありません。", "warn");
+        return null;
+      }
+      return values;
+    }
+
+    function clearForm() {
+      staffForm.reset();
+      editingId = null;
+      saveBtn.textContent = "保存";
+      editHintEl.classList.remove("is-visible");
+      cancelBtn.hidden = true;
+      renderStaffList();
+    }
+
+    function enterEditMode(staff) {
+      editingId = staff.id;
+      staffNumberInput.value = staff.staff_number;
+      staffNameInput.value = staff.name;
+      staffEmailInput.value = staff.email;
+      saveBtn.textContent = "更新";
+      editHintEl.classList.add("is-visible");
+      cancelBtn.hidden = false;
+      staffNameInput.focus();
+      renderStaffList();
+      showMessage("「" + staff.name + "」を編集しています。", "warn");
+    }
+
+    function renderStaffList() {
+      if (staffCache.length === 0) {
+        staffListEl.innerHTML =
+          '<p class="empty-state">担当者がまだ登録されていません。<br>上のフォームから登録してください。</p>';
+        return;
+      }
+
+      staffListEl.innerHTML =
+        '<table class="master-table"><thead><tr>' +
+        "<th>職員番号</th><th>氏名</th><th>ログインメール</th><th>登録日時</th><th>操作</th></tr></thead><tbody>" +
+        staffCache
+          .map(function (s) {
+            return (
+              "<tr" +
+              (editingId === s.id ? ' class="is-editing"' : "") +
+              ' data-id="' +
+              escapeHtml(s.id) +
+              '">' +
+              "<td>" +
+              escapeHtml(s.staff_number) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(s.name) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(s.email) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(formatDate(s.created_at)) +
+              "</td>" +
+              '<td class="actions">' +
+              '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
+              '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
+              "</td></tr>"
+            );
+          })
+          .join("") +
+        "</tbody></table>";
+    }
+
+    async function loadStaff() {
+      staffListEl.innerHTML = '<p class="loading">読み込み中…</p>';
+
+      const { data, error } = await supabaseClient
+        .from(TABLE_NAME)
+        .select("id, staff_number, name, email, created_at")
+        .order("staff_number", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        staffCache = [];
+        staffListEl.innerHTML =
+          '<p class="empty-state">データの取得に失敗しました。<br>sql/20260602_add_staff_lending_processor.sql を実行しているか確認してください。</p>';
+        showMessage("担当者の取得に失敗しました。", "error");
+        return;
+      }
+
+      staffCache = data || [];
+      renderStaffList();
+    }
+
+    async function saveStaff() {
+      const values = validateForm();
+      if (!values) return;
+
+      setBusy(true);
+
+      try {
+        if (editingId) {
+          const { error } = await supabaseClient
+            .from(TABLE_NAME)
+            .update(values)
+            .eq("id", editingId);
+          if (error) throw error;
+          clearForm();
+          await loadStaff();
+          showMessage("担当者を更新しました。", "success");
+        } else {
+          const { error } = await supabaseClient.from(TABLE_NAME).insert(values);
+          if (error) throw error;
+          clearForm();
+          await loadStaff();
+          showMessage("担当者を登録しました。", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        if (err.code === "23505") {
+          showMessage("職員番号またはメールアドレスが既に登録されています。", "error");
+        } else {
+          showMessage("処理に失敗しました。もう一度お試しください。", "error");
+        }
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function deleteStaff(id) {
+      const ok = window.confirm(
+        "この担当者を削除しますか？\n貸出履歴がある担当者は削除できません。"
+      );
+      if (!ok) return;
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient.from(TABLE_NAME).delete().eq("id", id);
+        if (error) throw error;
+        if (editingId === id) clearForm();
+        await loadStaff();
+        showMessage("担当者を削除しました。", "success");
+      } catch (err) {
+        console.error(err);
+        showMessage("削除に失敗しました。もう一度お試しください。", "error");
+        await loadStaff();
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    staffForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!isBusy) saveStaff();
+    });
+
+    cancelBtn.addEventListener("click", function () {
+      clearForm();
+      showMessage("編集をキャンセルしました。", "warn");
+    });
+
+    staffListEl.addEventListener("click", function (e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn || isBusy) return;
+
+      const row = btn.closest("tr[data-id]");
+      if (!row) return;
+
+      const id = row.getAttribute("data-id");
+      const staff = staffCache.find(function (s) {
+        return s.id === id;
+      });
+      if (!staff) return;
+
+      if (btn.getAttribute("data-action") === "edit") {
+        enterEditMode(staff);
+        return;
+      }
+
+      if (btn.getAttribute("data-action") === "delete") {
+        deleteStaff(id);
+      }
+    });
+
+    (async function init() {
+      if (!(await LibralyAuth.requireAuth())) return;
+      await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+      LibralyNav.renderGlobalNav(
+        document.getElementById("global-nav"),
+        LibralyNav.SECTION_MAINTENANCE
+      );
+      LibralyNav.renderMaintenanceSubNav(document.getElementById("sub-nav"), "staff");
+      await loadStaff();
+    })();
+  </script>
+</body>
+</html>

@@ -542,6 +542,7 @@
       <div class="card-header">
         <h2 id="lend-heading">貸出登録</h2>
         <p class="card-header__hint">条件を選択して図書と学生を指定してください</p>
+        <p id="operator-hint" class="card-header__hint"></p>
       </div>
 
       <form id="lend-form" novalidate>
@@ -667,8 +668,10 @@
     let bookCategoryFilter = "";
     let lendFacultyFilter = "";
     let lendDepartmentFilter = "";
+    let currentStaff = null;
 
     const messageEl = document.getElementById("message");
+    const operatorHintEl = document.getElementById("operator-hint");
     const lendForm = document.getElementById("lend-form");
     const bookCategoryFilterEl = document.getElementById("book-category-filter");
     const bookSelect = document.getElementById("book-id");
@@ -705,7 +708,29 @@
 
     function setBusy(busy) {
       isBusy = busy;
-      lendBtn.disabled = busy;
+      lendBtn.disabled = busy || !currentStaff;
+    }
+
+    function getProcessorName(staff) {
+      if (staff && staff.name) return staff.name;
+      return "—";
+    }
+
+    function updateOperatorHint() {
+      if (currentStaff) {
+        operatorHintEl.textContent =
+          "担当者: " + currentStaff.name + "（ログインに紐づく担当者を自動記録）";
+      } else {
+        operatorHintEl.textContent =
+          "担当者が未登録のため、貸出・返却はできません。マスタ保守の担当者マスタで登録してください。";
+      }
+    }
+
+    async function loadCurrentStaff() {
+      currentStaff = await LibralyAuth.getCurrentStaff();
+      updateOperatorHint();
+      setBusy(isBusy);
+      return !!currentStaff;
     }
 
     function formatDateTime(iso) {
@@ -1058,7 +1083,7 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>操作</th>" +
+        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th><th>操作</th>" +
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
@@ -1096,6 +1121,12 @@
               "</td>" +
               "<td>" +
               escapeHtml(h.is_returned ? formatDateOnly(h.returned_at) : "—") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getProcessorName(h.lent_staff)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getProcessorName(h.returned_staff)) +
               "</td>" +
               '<td class="actions">' +
               actionCell +
@@ -1185,8 +1216,11 @@
         .from(HISTORY_TABLE)
         .select(
           "id, book_id, student_number, is_returned, due_date, returned_at, created_at, " +
+            "lent_by_staff_id, returned_by_staff_id, " +
             "libraly_app ( id, title, name ), " +
-            "libraly_app_student ( student_number, name )"
+            "libraly_app_student ( student_number, name ), " +
+            "lent_staff:libraly_app_staff!lent_by_staff_id ( name ), " +
+            "returned_staff:libraly_app_staff!returned_by_staff_id ( name )"
         )
         .order("created_at", { ascending: false });
 
@@ -1206,6 +1240,14 @@
     }
 
     async function lendBook() {
+      if (!currentStaff) {
+        showMessage(
+          "担当者が未登録です。マスタ保守の担当者マスタで、ログインメールと一致する担当者を登録してください。",
+          "error"
+        );
+        return;
+      }
+
       const bookId = bookSelect.value;
       const studentNumber = studentSelect.value;
 
@@ -1232,6 +1274,7 @@
           is_returned: false,
           created_at: lendDates.lentAt,
           due_date: lendDates.dueDate,
+          lent_by_staff_id: currentStaff.id,
         });
 
         if (error) {
@@ -1249,6 +1292,14 @@
     }
 
     async function returnBook(historyId) {
+      if (!currentStaff) {
+        showMessage(
+          "担当者が未登録です。マスタ保守の担当者マスタで、ログインメールと一致する担当者を登録してください。",
+          "error"
+        );
+        return;
+      }
+
       const record = historyCache.find(function (h) {
         return h.id === historyId;
       });
@@ -1266,7 +1317,11 @@
       try {
         const { error } = await supabaseClient
           .from(HISTORY_TABLE)
-          .update({ is_returned: true, returned_at: getReturnDateValue() })
+          .update({
+            is_returned: true,
+            returned_at: getReturnDateValue(),
+            returned_by_staff_id: currentStaff.id,
+          })
           .eq("id", historyId);
 
         if (error) {
@@ -1433,6 +1488,14 @@
         document.getElementById("global-nav"),
         LibralyNav.SECTION_LENDING
       );
+
+      const staffOk = await loadCurrentStaff();
+      if (!staffOk) {
+        showMessage(
+          "担当者が未登録です。貸出・返却を行うには、マスタ保守の担当者マスタでログインメールと一致する担当者を登録してください。",
+          "error"
+        );
+      }
 
       const [booksOk, studentsOk] = await Promise.all([
         loadBooks(),

@@ -17,6 +17,7 @@
     { id: "books", label: "図書", href: "books.html" },
     { id: "categories", label: "カテゴリ", href: "categories.html" },
     { id: "students", label: "学生", href: "students.html" },
+    { id: "staff", label: "担当者", href: "staff.html" },
     { id: "masters", label: "学部・学科", href: "masters.html" },
   ];
 

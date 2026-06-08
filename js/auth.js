@@ -97,15 +97,39 @@
     global.location.replace(HOME_PAGE);
   }
 
+  const STAFF_TABLE = "libraly_app_staff";
+
+  async function getCurrentStaff() {
+    const session = await getSession();
+    if (!session || !session.user || !session.user.email) {
+      return null;
+    }
+
+    const { data, error } = await getClient()
+      .from(STAFF_TABLE)
+      .select("id, staff_number, name, email")
+      .eq("email", session.user.email)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return null;
+    }
+
+    return data || null;
+  }
+
   global.LibralyAuth = {
     getClient,
     getSession,
     requireAuth,
     renderUserBar,
     signOut,
+    getCurrentStaff,
     validatePassword,
     authErrorMessage,
     PASSWORD_MIN_LENGTH,
     HOME_PAGE,
+    STAFF_TABLE,
   };
 })(window);

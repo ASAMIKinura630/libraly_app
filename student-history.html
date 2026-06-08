@@ -313,6 +313,11 @@
       return "—";
     }
 
+    function getProcessorName(staff) {
+      if (staff && staff.name) return staff.name;
+      return "—";
+    }
+
     function renderStudentSummary(student) {
       studentSummaryEl.innerHTML =
         '<h3 class="student-summary__title">' +
@@ -384,7 +389,7 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>図書</th><th>著者</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th>" +
+        "<th>状態</th><th>図書</th><th>著者</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th>" +
         "</tr></thead><tbody>" +
         records
           .map(function (h) {
@@ -399,6 +404,8 @@
               "<td>" + escapeHtml(formatDateOnly(h.created_at)) + "</td>" +
               "<td>" + escapeHtml(formatDateOnly(h.due_date)) + "</td>" +
               "<td>" + escapeHtml(h.is_returned ? formatDateOnly(h.returned_at) : "—") + "</td>" +
+              "<td>" + escapeHtml(getProcessorName(h.lent_staff)) + "</td>" +
+              "<td>" + escapeHtml(getProcessorName(h.returned_staff)) + "</td>" +
               "</tr>"
             );
           })
@@ -438,7 +445,9 @@
         .from(HISTORY_TABLE)
         .select(
           "id, is_returned, due_date, returned_at, created_at, " +
-            "libraly_app ( title, name )"
+            "libraly_app ( title, name ), " +
+            "lent_staff:libraly_app_staff!lent_by_staff_id ( name ), " +
+            "returned_staff:libraly_app_staff!returned_by_staff_id ( name )"
         )
         .eq("student_number", student.student_number)
         .order("created_at", { ascending: false });
