@@ -518,6 +518,10 @@
             <input type="email" id="signup-email" autocomplete="email" required />
           </div>
           <div class="form-group">
+            <label for="signup-name">氏名</label>
+            <input type="text" id="signup-name" autocomplete="name" placeholder="例：山田 太郎" required />
+          </div>
+          <div class="form-group">
             <label for="signup-password">パスワード</label>
             <input type="password" id="signup-password" autocomplete="new-password" required />
             <span class="form-hint">6文字以上</span>
@@ -1442,6 +1446,17 @@
       return true;
     }
 
+    function validateSignupInput(email, name, password) {
+      if (!validateAuthInput(email, password)) {
+        return false;
+      }
+      if (!LibralyAuth.validateStaffName(name)) {
+        alert("氏名を入力してください。");
+        return false;
+      }
+      return true;
+    }
+
     authTabLogin.addEventListener("click", function () {
       setAuthTab("login");
     });
@@ -1468,10 +1483,15 @@
     signupForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       const cred = readAuthCredentials("signup-email", "signup-password");
-      if (!validateAuthInput(cred.email, cred.password)) return;
+      const name = document.getElementById("signup-name").value;
+      if (!validateSignupInput(cred.email, name, cred.password)) return;
 
       signupSubmitBtn.disabled = true;
-      const { error } = await supabaseClient.auth.signUp(cred);
+      const { error } = await LibralyAuth.signUpWithStaff({
+        email: cred.email,
+        password: cred.password,
+        name: name,
+      });
       signupSubmitBtn.disabled = false;
 
       if (error) {

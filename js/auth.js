@@ -51,6 +51,84 @@
     return password.length >= PASSWORD_MIN_LENGTH;
   }
 
+  function validateStaffName(name) {
+    return name.trim().length > 0;
+  }
+
+  function deriveStaffNumber(email) {
+    const local = (email.split("@")[0] || "user").replace(/[^a-zA-Z0-9._-]/g, "");
+    return (local || "user").slice(0, 32);
+  }
+
+  function isUniqueViolation(error) {
+    if (!error) return false;
+    const code = error.code || "";
+    const msg = error.message || "";
+    return code === "23505" || msg.includes("duplicate key");
+  }
+
+  async function insertStaffForSignup(email, name) {
+    const baseNumber = deriveStaffNumber(email);
+    const maxAttempts = 5;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const staffNumber =
+        attempt === 0 ? baseNumber : baseNumber + "-" + (attempt + 1);
+
+      const { data, error } = await getClient()
+        .from(STAFF_TABLE)
+        .insert({
+          staff_number: staffNumber,
+          name: name.trim(),
+          email: email,
+        })
+        .select("id, staff_number, name, email")
+        .single();
+
+      if (!error) {
+        return { data, error: null };
+      }
+
+      if (isUniqueViolation(error) && attempt < maxAttempts - 1) {
+        continue;
+      }
+
+      return { data: null, error };
+    }
+
+    return {
+      data: null,
+      error: { message: "担当者マスタの登録に失敗しました。" },
+    };
+  }
+
+  async function signUpWithStaff({ email, password, name }) {
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+
+    const { data, error } = await getClient().auth.signUp({
+      email: trimmedEmail,
+      password,
+    });
+
+    if (error) {
+      return { error };
+    }
+
+    const staffResult = await insertStaffForSignup(trimmedEmail, trimmedName);
+    if (staffResult.error) {
+      return {
+        error: {
+          message:
+            "アカウントは作成されましたが、担当者マスタの登録に失敗しました。マスタ保守の担当者マスタから手動で登録してください。",
+        },
+        session: data.session || null,
+      };
+    }
+
+    return { data, error: null, staff: staffResult.data };
+  }
+
   async function getSession() {
     const { data, error } = await getClient().auth.getSession();
     if (error) {
@@ -136,7 +214,9 @@
     renderUserBar,
     signOut,
     getCurrentStaff,
+    signUpWithStaff,
     validatePassword,
+    validateStaffName,
     authErrorMessage,
     PASSWORD_MIN_LENGTH,
     HOME_PAGE,
