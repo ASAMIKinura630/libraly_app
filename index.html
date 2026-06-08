@@ -218,7 +218,8 @@
       font-size: 0.9rem;
     }
 
-    .form-group select {
+    .form-group select,
+    .form-group input[type="date"] {
       width: 100%;
       padding: 0.65rem 0.75rem;
       font-size: 1rem;
@@ -226,9 +227,11 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       background: #fff;
+      min-height: 44px;
     }
 
-    .form-group select:focus {
+    .form-group select:focus,
+    .form-group input[type="date"]:focus {
       outline: 2px solid var(--accent);
       outline-offset: 1px;
       border-color: var(--accent);
@@ -719,6 +722,48 @@
       });
     }
 
+    function formatDateOnly(value) {
+      if (!value) return "—";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const parts = value.split("-");
+        return parts[0] + "/" + parts[1] + "/" + parts[2];
+      }
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    }
+
+    function toDateInputValue(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date.getTime());
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    /** 貸出登録用: 貸出日=当日、返却予定日=14日後 */
+    function getLendRecordDates() {
+      const today = new Date();
+      return {
+        lentAt: today.toISOString(),
+        dueDate: toDateInputValue(addDays(today, 14)),
+      };
+    }
+
+    /** 返却処理用: 返却日=当日 */
+    function getReturnDateValue() {
+      return toDateInputValue(new Date()) + "T00:00:00";
+    }
+
     function getActiveLoanBookIds() {
       const ids = {};
       historyCache.forEach(function (h) {
@@ -1014,7 +1059,7 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸出日時</th><th>操作</th>" +
+        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸出日時</th><th>返却予定日</th><th>返却日</th><th>操作</th>" +
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
@@ -1046,6 +1091,12 @@
               "</td>" +
               "<td>" +
               escapeHtml(formatDateTime(h.created_at)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(formatDateOnly(h.due_date)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(h.is_returned ? formatDateOnly(h.returned_at) : "—") +
               "</td>" +
               '<td class="actions">' +
               actionCell +
@@ -1134,7 +1185,7 @@
       const { data, error } = await supabaseClient
         .from(HISTORY_TABLE)
         .select(
-          "id, book_id, student_number, is_returned, created_at, " +
+          "id, book_id, student_number, is_returned, due_date, returned_at, created_at, " +
             "libraly_app ( id, title, name ), " +
             "libraly_app_student ( student_number, name )"
         )
@@ -1164,6 +1215,8 @@
         return;
       }
 
+      const lendDates = getLendRecordDates();
+
       const activeIds = getActiveLoanBookIds();
       if (activeIds[bookId]) {
         showMessage("この図書はすでに貸出中です。先に返却してください。", "warn");
@@ -1178,6 +1231,8 @@
           book_id: bookId,
           student_number: studentNumber,
           is_returned: false,
+          created_at: lendDates.lentAt,
+          due_date: lendDates.dueDate,
         });
 
         if (error) {
@@ -1212,7 +1267,7 @@
       try {
         const { error } = await supabaseClient
           .from(HISTORY_TABLE)
-          .update({ is_returned: true })
+          .update({ is_returned: true, returned_at: getReturnDateValue() })
           .eq("id", historyId);
 
         if (error) {
