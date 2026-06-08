@@ -1,0 +1,28 @@
+/* 図書館保守システム — 共通テーマ（青ベース） */
+
+:root {
+  --bg: #edf2f9;
+  --surface: #f8fbff;
+  --border: #c5d4e8;
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-secondary: #4a6fa5;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+  --accent-ring: rgba(37, 99, 235, 0.15);
+  --panel-alt: #e8f0fa;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --success-bg: #dbeafe;
+  --success-text: #1e40af;
+  --warn-bg: #e0edff;
+  --warn-text: #1e40af;
+  --error-bg: #fee2e2;
+  --error-text: #b91c1c;
+  --inquiry-banner-bg: #dbeafe;
+  --inquiry-banner-text: #1e3a8a;
+  --shadow: 0 2px 12px rgba(30, 58, 138, 0.08);
+  --radius: 10px;
+  --max-width: 960px;
+}
