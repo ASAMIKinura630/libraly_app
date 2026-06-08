@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生貸出履歴 | マスタ保守 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <link rel="stylesheet" href="css/auth-bar.css" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffef9;
+      --border: #d8d0c4;
+      --text: #2c2416;
+      --muted: #6b5f4f;
+      --accent: #2d5a4a;
+      --warn-bg: #fff6e5;
+      --warn-text: #8a5a00;
+      --success-bg: #e8f3ec;
+      --success-text: #1f5c38;
+      --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
+      --radius: 10px;
+      --max-width: 960px;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+
+    .nav--return {
+      margin-bottom: 0.35rem;
+    }
+
+    .nav--return a {
+      font-size: 0.85rem;
+    }
+
+    .maintenance-banner {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+
+    .header p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .student-summary__title {
+      margin: 0 0 0.5rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .student-summary__row {
+      margin: 0.35rem 0;
+      font-size: 0.95rem;
+    }
+
+    .student-summary__label {
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 0.35rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .history-table th,
+    .history-table td {
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .history-table th {
+      font-weight: 600;
+      background: #f8f6f1;
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge--lending {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+    }
+
+    .badge--returned {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .empty-state,
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+
+    .message {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+      background: #fdecea;
+      color: #8b2e26;
+    }
+
+    .message.is-visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="auth-bar"></div>
+    <nav class="nav nav--return" aria-label="学生一覧への復帰">
+      <a href="students.html">← 学生一覧に戻る</a>
+    </nav>
+    <nav class="nav" aria-label="マスタ保守メニュー">
+      <a href="admin.html">マスタ保守</a>
+      <a href="books.html">図書</a>
+      <a href="categories.html">カテゴリ</a>
+      <a href="students.html" aria-current="page">学生</a>
+      <a href="masters.html">学部・学科</a>
+    </nav>
+
+    <div class="maintenance-banner" role="note">
+      マスタ保守モード — 学生の貸出履歴を照会しています
+    </div>
+
+    <header class="header">
+      <h1>学生貸出履歴</h1>
+      <p>選択した学生の貸出履歴（何を・いつ借りたか）</p>
+    </header>
+
+    <div id="message" class="message" role="alert"></div>
+
+    <section class="card" aria-labelledby="student-summary-heading">
+      <h2 id="student-summary-heading">学生情報</h2>
+      <div id="student-summary">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="history-heading">
+      <h2 id="history-heading">貸出履歴</h2>
+      <div id="history-list" class="table-wrap">
+        <p class="loading">読み込み中…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STUDENT_TABLE = "libraly_app_student";
+    const HISTORY_TABLE = "libraly_app_lending_history";
+
+    const supabaseClient = LibralyAuth.getClient();
+    const studentId = new URLSearchParams(window.location.search).get("id");
+
+    const messageEl = document.getElementById("message");
+    const studentSummaryEl = document.getElementById("student-summary");
+    const historyListEl = document.getElementById("history-list");
+
+    function escapeHtml(str) {
+      if (str == null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showError(text) {
+      messageEl.textContent = text;
+      messageEl.classList.add("is-visible");
+    }
+
+    function formatDateOnly(value) {
+      if (!value) return "—";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const parts = value.split("-");
+        return parts[0] + "/" + parts[1] + "/" + parts[2];
+      }
+      if (/^\d{8}$/.test(value)) {
+        return value.slice(0, 4) + "/" + value.slice(4, 6) + "/" + value.slice(6, 8);
+      }
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return "—";
+      return d.toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    }
+
+    function formatDateTime(isoString) {
+      if (!isoString) return "—";
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return "—";
+      return date.toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function getFacultyName(student) {
+      const dept = student.libraly_app_department;
+      if (dept && dept.libraly_app_faculty && dept.libraly_app_faculty.name) {
+        return dept.libraly_app_faculty.name;
+      }
+      return "—";
+    }
+
+    function getDepartmentName(student) {
+      if (student.libraly_app_department && student.libraly_app_department.name) {
+        return student.libraly_app_department.name;
+      }
+      return "—";
+    }
+
+    function getBookTitle(record) {
+      if (record.libraly_app && record.libraly_app.title) {
+        return record.libraly_app.title;
+      }
+      return "—";
+    }
+
+    function getBookAuthor(record) {
+      if (record.libraly_app && record.libraly_app.name) {
+        return record.libraly_app.name;
+      }
+      return "—";
+    }
+
+    function renderStudentSummary(student) {
+      studentSummaryEl.innerHTML =
+        '<h3 class="student-summary__title">' +
+        escapeHtml(student.name) +
+        "</h3>" +
+        '<p class="student-summary__row"><span class="student-summary__label">学籍番号</span>' +
+        escapeHtml(student.student_number) +
+        "</p>" +
+        '<p class="student-summary__row"><span class="student-summary__label">学部</span>' +
+        escapeHtml(getFacultyName(student)) +
+        "</p>" +
+        '<p class="student-summary__row"><span class="student-summary__label">学科</span>' +
+        escapeHtml(getDepartmentName(student)) +
+        "</p>" +
+        '<p class="student-summary__row"><span class="student-summary__label">生年月日</span>' +
+        escapeHtml(formatDateOnly(student.birth_date)) +
+        "</p>" +
+        '<p class="student-summary__row"><span class="student-summary__label">登録日時</span>' +
+        escapeHtml(formatDateTime(student.created_at)) +
+        "</p>";
+
+      document.title = student.name + " の貸出履歴 | マスタ保守 | 図書館保守システム";
+    }
+
+    function renderHistoryList(records) {
+      if (!records || records.length === 0) {
+        historyListEl.innerHTML =
+          '<p class="empty-state">この学生の貸出履歴はありません。</p>';
+        return;
+      }
+
+      historyListEl.innerHTML =
+        '<table class="history-table">' +
+        "<thead><tr>" +
+        "<th>状態</th><th>図書</th><th>著者</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th>" +
+        "</tr></thead><tbody>" +
+        records
+          .map(function (h) {
+            const statusBadge = h.is_returned
+              ? '<span class="badge badge--returned">返却済み</span>'
+              : '<span class="badge badge--lending">貸出中</span>';
+            return (
+              "<tr>" +
+              "<td>" + statusBadge + "</td>" +
+              "<td>" + escapeHtml(getBookTitle(h)) + "</td>" +
+              "<td>" + escapeHtml(getBookAuthor(h)) + "</td>" +
+              "<td>" + escapeHtml(formatDateOnly(h.created_at)) + "</td>" +
+              "<td>" + escapeHtml(formatDateOnly(h.due_date)) + "</td>" +
+              "<td>" + escapeHtml(h.is_returned ? formatDateOnly(h.returned_at) : "—") + "</td>" +
+              "</tr>"
+            );
+          })
+          .join("") +
+        "</tbody></table>";
+    }
+
+    async function loadPage() {
+      if (!studentId) {
+        showError("学生が指定されていません。学生一覧から再度お試しください。");
+        studentSummaryEl.innerHTML = '<p class="empty-state">学生IDがありません。</p>';
+        historyListEl.innerHTML = "";
+        return;
+      }
+
+      const studentRes = await supabaseClient
+        .from(STUDENT_TABLE)
+        .select(
+          "id, student_number, name, birth_date, created_at, " +
+            "libraly_app_department ( id, name, libraly_app_faculty ( id, name ) )"
+        )
+        .eq("id", studentId)
+        .maybeSingle();
+
+      if (studentRes.error || !studentRes.data) {
+        console.error(studentRes.error);
+        showError("学生データの取得に失敗しました。");
+        studentSummaryEl.innerHTML = '<p class="empty-state">学生が見つかりません。</p>';
+        historyListEl.innerHTML = "";
+        return;
+      }
+
+      const student = studentRes.data;
+      renderStudentSummary(student);
+
+      const historyRes = await supabaseClient
+        .from(HISTORY_TABLE)
+        .select(
+          "id, is_returned, due_date, returned_at, created_at, " +
+            "libraly_app ( title, name )"
+        )
+        .eq("student_number", student.student_number)
+        .order("created_at", { ascending: false });
+
+      if (historyRes.error) {
+        console.error(historyRes.error);
+        historyListEl.innerHTML =
+          '<p class="empty-state">貸出履歴の取得に失敗しました。</p>';
+        return;
+      }
+
+      renderHistoryList(historyRes.data || []);
+    }
+
+    (async function init() {
+      if (!(await LibralyAuth.requireAuth())) return;
+      await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+      await loadPage();
+    })();
+  </script>
+</body>
+</html>

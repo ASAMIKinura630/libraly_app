@@ -242,6 +242,22 @@
       border: 1px solid var(--border);
     }
 
+    .btn-history {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      padding: 0.35rem 0.75rem;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
+    .btn-history:hover:not(:disabled) {
+      background: #ffe8c2;
+    }
+
+    a.btn {
+      text-decoration: none;
+    }
+
     .btn-edit {
       background: #e8eef5;
       color: #2a4365;
@@ -731,6 +747,9 @@
               escapeHtml(formatBirthDateDisplay(s.birth_date)) +
               "</td>" +
               '<td class="actions">' +
+              '<a href="student-history.html?id=' +
+              encodeURIComponent(s.id) +
+              '" class="btn btn-history">貸出履歴</a>' +
               '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
               '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
               "</td></tr>"
