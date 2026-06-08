@@ -1059,7 +1059,7 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸出日時</th><th>返却予定日</th><th>返却日</th><th>操作</th>" +
+        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>操作</th>" +
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
@@ -1090,7 +1090,7 @@
               escapeHtml(getStudentName(h)) +
               "</td>" +
               "<td>" +
-              escapeHtml(formatDateTime(h.created_at)) +
+              escapeHtml(formatDateOnly(h.created_at)) +
               "</td>" +
               "<td>" +
               escapeHtml(formatDateOnly(h.due_date)) +
