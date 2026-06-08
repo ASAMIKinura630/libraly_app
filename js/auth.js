@@ -9,6 +9,7 @@
 
   const PASSWORD_MIN_LENGTH = 6;
   const HOME_PAGE = "index.html";
+  const STAFF_TABLE = "libraly_app_staff";
 
   let supabaseClient = null;
 
@@ -68,18 +69,41 @@
     return session;
   }
 
+  async function resolveStaffFromSession(session) {
+    if (!session || !session.user || !session.user.email) {
+      return null;
+    }
+
+    const { data, error } = await getClient()
+      .from(STAFF_TABLE)
+      .select("id, staff_number, name, email")
+      .eq("email", session.user.email)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return null;
+    }
+
+    return data || null;
+  }
+
   async function renderUserBar(hostEl) {
     if (!hostEl) return;
     const { data } = await getClient().auth.getSession();
     if (!data.session) return;
 
-    const email = data.session.user.email || "";
+    const staff = await resolveStaffFromSession(data.session);
+    const displayName = staff
+      ? staff.name
+      : data.session.user.email || "";
+
     hostEl.className = "auth-bar";
     hostEl.setAttribute("aria-label", "ログイン情報");
     hostEl.innerHTML =
       '<span class="auth-bar__label">ログイン中:</span>' +
-      '<span class="auth-bar__email">' +
-      escapeHtml(email) +
+      '<span class="auth-bar__name">' +
+      escapeHtml(displayName) +
       "</span>" +
       '<button type="button" class="auth-bar__logout">ログアウト</button>';
 
@@ -97,26 +121,12 @@
     global.location.replace(HOME_PAGE);
   }
 
-  const STAFF_TABLE = "libraly_app_staff";
-
   async function getCurrentStaff() {
     const session = await getSession();
-    if (!session || !session.user || !session.user.email) {
+    if (!session) {
       return null;
     }
-
-    const { data, error } = await getClient()
-      .from(STAFF_TABLE)
-      .select("id, staff_number, name, email")
-      .eq("email", session.user.email)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error);
-      return null;
-    }
-
-    return data || null;
+    return resolveStaffFromSession(session);
   }
 
   global.LibralyAuth = {
