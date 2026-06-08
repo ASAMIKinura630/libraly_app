@@ -315,67 +315,8 @@
       background: #ffe8c2;
     }
 
-    .history-picker {
-      margin: 1rem 0;
-    }
-
-    .history-picker select {
-      width: 100%;
-      min-height: 44px;
-      padding: 0.5rem 0.75rem;
-      font-size: 1rem;
-      font-family: inherit;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .history-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-
-    .history-table th,
-    .history-table td {
-      padding: 0.65rem 0.5rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      vertical-align: middle;
-    }
-
-    .history-table th {
-      font-weight: 600;
-      background: #f8f6f1;
-      white-space: nowrap;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .badge--lending {
-      background: var(--warn-bg);
-      color: var(--warn-text);
-    }
-
-    .badge--returned {
-      background: var(--success-bg);
-      color: var(--success-text);
-    }
-
-    .book-item.is-history-selected {
-      border-color: var(--warn-text);
-      box-shadow: 0 0 0 2px rgba(138, 90, 0, 0.15);
+    a.btn {
+      text-decoration: none;
     }
 
     .edit-hint {
@@ -554,38 +495,19 @@
         <p class="loading">読み込み中…</p>
       </div>
     </section>
-
-    <section class="card" aria-labelledby="lend-history-heading">
-      <h2 id="lend-history-heading">貸出履歴照会</h2>
-      <p class="form-group__optional">図書を選択すると、誰が・いつ借りたかを表示します。</p>
-
-      <div class="history-picker form-group">
-        <label for="history-book-select">図書</label>
-        <select id="history-book-select" aria-label="貸出履歴を表示する図書">
-          <option value="">選択してください</option>
-        </select>
-      </div>
-
-      <div id="lend-history-list" class="table-wrap">
-        <p class="empty-state">図書を選択すると、貸出履歴が表示されます。</p>
-      </div>
-    </section>
   </div>
 
   <script>
     const TABLE_NAME = "libraly_app";
     const CATEGORY_TABLE = "libraly_app_category";
-    const HISTORY_TABLE = "libraly_app_lending_history";
     const MESSAGE_HIDE_MS = 4000;
 
     let editingId = null;
-    let selectedHistoryBookId = "";
     let messageTimer = null;
     let isBusy = false;
     let booksCache = [];
     let categoriesCache = [];
     let listFilterCategoryId = "";
-    let bookLendHistoryCache = [];
 
     const supabaseClient = LibralyAuth.getClient();
 
@@ -600,8 +522,6 @@
     const saveBtn = document.getElementById("save-btn");
     const cancelBtn = document.getElementById("cancel-btn");
     const bookListEl = document.getElementById("book-list");
-    const historyBookSelect = document.getElementById("history-book-select");
-    const lendHistoryListEl = document.getElementById("lend-history-list");
 
     function showMessage(text, type) {
       clearTimeout(messageTimer);
@@ -701,28 +621,6 @@
       });
     }
 
-    function formatDateOnly(value) {
-      if (!value) return "—";
-      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        const parts = value.split("-");
-        return parts[0] + "/" + parts[1] + "/" + parts[2];
-      }
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return "—";
-      return d.toLocaleDateString("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-    }
-
-    function getStudentNameFromHistory(record) {
-      if (record.libraly_app_student && record.libraly_app_student.name) {
-        return record.libraly_app_student.name;
-      }
-      return "—";
-    }
-
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, "&amp;")
@@ -801,100 +699,6 @@
       return '<p class="book-item__category">カテゴリ：<span class="book-item__category-label book-item__category--none">未設定</span></p>';
     }
 
-    function populateHistoryBookSelect() {
-      const current = historyBookSelect.value;
-      historyBookSelect.innerHTML = '<option value="">選択してください</option>';
-      booksCache.forEach(function (book) {
-        const option = document.createElement("option");
-        option.value = book.id;
-        option.textContent = book.title + "（" + book.name + "）";
-        historyBookSelect.appendChild(option);
-      });
-      if (current && historyBookSelect.querySelector('option[value="' + current + '"]')) {
-        historyBookSelect.value = current;
-      }
-    }
-
-    function renderLendHistoryList() {
-      if (!selectedHistoryBookId) {
-        lendHistoryListEl.innerHTML =
-          '<p class="empty-state">図書を選択すると、貸出履歴が表示されます。</p>';
-        return;
-      }
-
-      if (bookLendHistoryCache.length === 0) {
-        lendHistoryListEl.innerHTML =
-          '<p class="empty-state">この図書の貸出履歴はありません。</p>';
-        return;
-      }
-
-      lendHistoryListEl.innerHTML =
-        '<table class="history-table">' +
-        "<thead><tr>" +
-        "<th>状態</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th>" +
-        "</tr></thead><tbody>" +
-        bookLendHistoryCache
-          .map(function (h) {
-            const statusBadge = h.is_returned
-              ? '<span class="badge badge--returned">返却済み</span>'
-              : '<span class="badge badge--lending">貸出中</span>';
-            return (
-              "<tr>" +
-              "<td>" + statusBadge + "</td>" +
-              "<td>" + escapeHtml(h.student_number) + "</td>" +
-              "<td>" + escapeHtml(getStudentNameFromHistory(h)) + "</td>" +
-              "<td>" + escapeHtml(formatDateOnly(h.created_at)) + "</td>" +
-              "<td>" + escapeHtml(formatDateOnly(h.due_date)) + "</td>" +
-              "<td>" + escapeHtml(h.is_returned ? formatDateOnly(h.returned_at) : "—") + "</td>" +
-              "</tr>"
-            );
-          })
-          .join("") +
-        "</tbody></table>";
-    }
-
-    async function loadBookLendHistory(bookId) {
-      selectedHistoryBookId = bookId || "";
-      bookLendHistoryCache = [];
-
-      if (!bookId) {
-        renderLendHistoryList();
-        renderBookList();
-        return;
-      }
-
-      lendHistoryListEl.innerHTML = '<p class="loading">読み込み中…</p>';
-
-      const { data, error } = await supabaseClient
-        .from(HISTORY_TABLE)
-        .select(
-          "id, student_number, is_returned, due_date, returned_at, created_at, " +
-            "libraly_app_student ( student_number, name )"
-        )
-        .eq("book_id", bookId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        lendHistoryListEl.innerHTML =
-          '<p class="empty-state">貸出履歴の取得に失敗しました。</p>';
-        return;
-      }
-
-      bookLendHistoryCache = data || [];
-      renderLendHistoryList();
-      renderBookList();
-    }
-
-    function selectBookForHistory(bookId) {
-      historyBookSelect.value = bookId;
-      loadBookLendHistory(bookId);
-      document.getElementById("lend-history-heading").scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-
     function renderBookList() {
       if (booksCache.length === 0) {
         bookListEl.innerHTML =
@@ -917,11 +721,9 @@
       bookListEl.innerHTML = filtered
         .map(function (book) {
           const isEditing = editingId === book.id;
-          const isHistorySelected = selectedHistoryBookId === book.id;
           return (
             '<article class="book-item' +
             (isEditing ? " is-editing" : "") +
-            (isHistorySelected ? " is-history-selected" : "") +
             '" data-id="' +
             escapeHtml(book.id) +
             '">' +
@@ -939,7 +741,9 @@
             escapeHtml(formatDate(book.created_at)) +
             "</p>" +
             '<div class="book-item__actions">' +
-            '<button type="button" class="btn btn-history" data-action="history">履歴</button>' +
+            '<a href="book-history.html?id=' +
+            encodeURIComponent(book.id) +
+            '" class="btn btn-history">貸出履歴</a>' +
             '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
             '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
             "</div>" +
@@ -968,11 +772,7 @@
       }
 
       booksCache = data || [];
-      populateHistoryBookSelect();
       renderBookList();
-      if (selectedHistoryBookId) {
-        await loadBookLendHistory(selectedHistoryBookId);
-      }
     }
 
     async function saveBook() {
@@ -1060,10 +860,6 @@
       renderBookList();
     });
 
-    historyBookSelect.addEventListener("change", function () {
-      if (!isBusy) loadBookLendHistory(historyBookSelect.value);
-    });
-
     bookListEl.addEventListener("click", async function (e) {
       const btn = e.target.closest("button[data-action]");
       if (!btn || isBusy) return;
@@ -1078,11 +874,6 @@
 
       if (!book) {
         showMessage("図書データの取得に失敗しました。", "error");
-        return;
-      }
-
-      if (btn.dataset.action === "history") {
-        selectBookForHistory(id);
         return;
       }
 
