@@ -6,7 +6,9 @@
   <title>図書マスタ保守 | マスタ保守 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
   <link rel="stylesheet" href="css/auth-bar.css" />
+  <link rel="stylesheet" href="css/global-nav.css" />
   <style>
     *,
     *::before,
@@ -428,29 +430,22 @@
 <body>
   <div class="app">
     <div id="auth-bar"></div>
-    <nav class="nav nav--return" aria-label="業務画面への復帰">
-      <a href="index.html">← 貸出・返却に戻る</a>
-    </nav>
-    <nav class="nav" aria-label="マスタ保守メニュー">
-      <a href="admin.html">マスタ保守</a>
-      <a href="books.html" aria-current="page">図書</a>
-      <a href="categories.html">カテゴリ</a>
-      <a href="students.html">学生</a>
-      <a href="masters.html">学部・学科</a>
-    </nav>
+    <div id="global-nav"></div>
+    <div id="sub-nav"></div>
+    <nav id="breadcrumb"></nav>
 
-    <div class="maintenance-banner" role="note">
+    <div id="zone-banner" class="maintenance-banner" role="note">
       マスタ保守モード — 変更内容は貸出画面の図書選択肢に反映されます
     </div>
 
     <header class="header">
-      <h1>図書マスタ保守</h1>
-      <p>図書データの登録・一覧・編集・削除</p>
+      <h1 id="page-title">図書マスタ保守</h1>
+      <p id="page-subtitle">図書データの登録・一覧・編集・削除</p>
     </header>
 
     <div id="message" class="message" role="status" aria-live="polite"></div>
 
-    <section class="card" aria-labelledby="form-heading">
+    <section id="form-section" class="card" aria-labelledby="form-heading">
       <h2 id="form-heading">図書の登録・編集</h2>
       <p id="edit-hint" class="edit-hint">編集中です。内容を変更して「更新」を押してください。</p>
 
@@ -501,6 +496,7 @@
     const TABLE_NAME = "libraly_app";
     const CATEGORY_TABLE = "libraly_app_category";
     const MESSAGE_HIDE_MS = 4000;
+    const isInquiryMode = LibralyNav.isInquiryMode();
 
     let editingId = null;
     let messageTimer = null;
@@ -699,10 +695,17 @@
       return '<p class="book-item__category">カテゴリ：<span class="book-item__category-label book-item__category--none">未設定</span></p>';
     }
 
+    function getHistoryHref(bookId) {
+      var href = "book-history.html?id=" + encodeURIComponent(bookId);
+      if (isInquiryMode) href += "&from=inquiry";
+      return href;
+    }
+
     function renderBookList() {
       if (booksCache.length === 0) {
-        bookListEl.innerHTML =
-          '<p class="empty-state">図書がまだ登録されていません。<br>上のフォームから登録してください。</p>';
+        bookListEl.innerHTML = isInquiryMode
+          ? '<p class="empty-state">図書がまだ登録されていません。</p>'
+          : '<p class="empty-state">図書がまだ登録されていません。<br>上のフォームから登録してください。</p>';
         return;
       }
 
@@ -741,11 +744,13 @@
             escapeHtml(formatDate(book.created_at)) +
             "</p>" +
             '<div class="book-item__actions">' +
-            '<a href="book-history.html?id=' +
-            encodeURIComponent(book.id) +
+            '<a href="' +
+            getHistoryHref(book.id) +
             '" class="btn btn-history">貸出履歴</a>' +
-            '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
-            '<button type="button" class="btn btn-delete" data-action="delete">削除</button>' +
+            (isInquiryMode
+              ? ""
+              : '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
+                '<button type="button" class="btn btn-delete" data-action="delete">削除</button>') +
             "</div>" +
             "</article>"
           );
@@ -888,9 +893,38 @@
       }
     });
 
+    function initPageLayout() {
+      LibralyNav.renderGlobalNav(
+        document.getElementById("global-nav"),
+        isInquiryMode ? LibralyNav.SECTION_INQUIRY : LibralyNav.SECTION_MAINTENANCE
+      );
+
+      if (isInquiryMode) {
+        document.getElementById("form-section").hidden = true;
+        document.getElementById("sub-nav").hidden = true;
+        var banner = document.getElementById("zone-banner");
+        banner.className = "inquiry-banner";
+        banner.textContent =
+          "照会モード — 図書の貸出履歴を参照します（登録・編集・削除はできません）";
+        document.getElementById("page-title").textContent = "図書から照会";
+        document.getElementById("page-subtitle").textContent =
+          "図書を選び、誰が・いつ借りたかを確認します";
+        LibralyNav.renderBreadcrumb(document.getElementById("breadcrumb"), [
+          { label: "貸出・返却", href: "index.html" },
+          { label: "貸出履歴照会", href: "inquiry.html" },
+          { label: "図書から照会" },
+        ]);
+        document.title = "図書から照会 | 貸出履歴照会 | 図書館保守システム";
+      } else {
+        document.getElementById("sub-nav").hidden = false;
+        LibralyNav.renderMaintenanceSubNav(document.getElementById("sub-nav"), "books");
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", async function () {
       if (!(await LibralyAuth.requireAuth())) return;
       await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+      initPageLayout();
       setBusy(true);
       await loadCategories();
       await loadBooks();

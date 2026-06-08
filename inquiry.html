@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>マスタ保守 | マスタ保守 | 図書館保守システム</title>
+  <title>貸出履歴照会 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
@@ -23,9 +23,6 @@
       --text: #2c2416;
       --muted: #6b5f4f;
       --accent: #2d5a4a;
-      --accent-hover: #234839;
-      --warn-bg: #fff6e5;
-      --warn-text: #8a5a00;
       --shadow: 0 2px 12px rgba(44, 36, 22, 0.08);
       --radius: 10px;
       --max-width: 720px;
@@ -47,42 +44,6 @@
       padding: 1.25rem 1rem 2.5rem;
     }
 
-    .nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 1rem;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-
-    .nav a {
-      color: var(--accent);
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    .nav a:hover {
-      text-decoration: underline;
-    }
-
-    .nav a[aria-current="page"] {
-      color: var(--text);
-      text-decoration: none;
-      cursor: default;
-    }
-
-    .nav--return {
-      margin-bottom: 0.35rem;
-    }
-
-    .nav--return a {
-      font-size: 0.85rem;
-    }
-
-    .header {
-      margin-bottom: 1rem;
-    }
-
     .header h1 {
       margin: 0;
       font-size: 1.75rem;
@@ -95,19 +56,8 @@
       font-size: 0.95rem;
     }
 
-    .header__note {
-      margin: 0.5rem 0 0;
-      font-size: 0.9rem;
-      color: var(--warn-text);
-    }
-
-    .maintenance-banner {
-      padding: 0.65rem 1rem;
-      border-radius: var(--radius);
-      background: var(--warn-bg);
-      color: var(--warn-text);
-      font-size: 0.9rem;
-      margin-bottom: 1.25rem;
+    .inquiry-banner {
+      margin-bottom: 1rem;
     }
 
     .portal-grid {
@@ -123,24 +73,24 @@
 
     .portal-card {
       display: block;
+      padding: 1.25rem;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 1.25rem;
       text-decoration: none;
       color: inherit;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .portal-card:hover {
-      border-color: var(--accent);
+      border-color: #2a4365;
       box-shadow: 0 4px 16px rgba(44, 36, 22, 0.12);
     }
 
     .portal-card h2 {
       margin: 0 0 0.35rem;
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       color: var(--accent);
     }
 
@@ -149,46 +99,30 @@
       font-size: 0.9rem;
       color: var(--muted);
     }
-
-    .portal-card--disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
   <div class="app">
     <div id="auth-bar"></div>
     <div id="global-nav"></div>
-    <div id="sub-nav"></div>
 
-    <div class="maintenance-banner" role="note">
-      マスタ保守モード — 登録データの追加・変更・削除はこのエリアで行います
+    <div class="inquiry-banner" role="note">
+      照会モード — 貸出履歴の参照のみ行います（貸出・返却の操作はできません）
     </div>
 
     <header class="header">
-      <h1>マスタ保守</h1>
-      <p>登録データの追加・変更・削除を行います</p>
-      <p class="header__note">※ 日常の貸出・返却はトップ画面で行ってください。</p>
+      <h1>貸出履歴照会</h1>
+      <p>図書または学生を起点に、貸出履歴を照会します</p>
     </header>
 
     <div class="portal-grid">
-      <a class="portal-card" href="books.html">
-        <h2>図書マスタ</h2>
-        <p>図書の登録・変更・削除</p>
+      <a class="portal-card" href="books.html?mode=inquiry">
+        <h2>図書から照会</h2>
+        <p>図書を選び、誰が・いつ借りたかを確認します</p>
       </a>
-      <a class="portal-card" href="students.html">
-        <h2>学生マスタ</h2>
-        <p>学籍番号・氏名・学部学科・生年月日</p>
-      </a>
-      <a class="portal-card" href="masters.html">
-        <h2>学部・学科マスタ</h2>
-        <p>学部（親）と学科（子）の管理</p>
-      </a>
-      <a class="portal-card" href="categories.html">
-        <h2>図書カテゴリマスタ</h2>
-        <p>カテゴリの登録・変更・削除</p>
+      <a class="portal-card" href="students.html?mode=inquiry">
+        <h2>学生から照会</h2>
+        <p>学生を選び、何を・いつ借りたかを確認します</p>
       </a>
     </div>
   </div>
@@ -199,9 +133,8 @@
       await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
       LibralyNav.renderGlobalNav(
         document.getElementById("global-nav"),
-        LibralyNav.SECTION_MAINTENANCE
+        LibralyNav.SECTION_INQUIRY
       );
-      LibralyNav.renderMaintenanceSubNav(document.getElementById("sub-nav"), "admin");
     })();
   </script>
 </body>

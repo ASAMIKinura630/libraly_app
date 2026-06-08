@@ -1,0 +1,97 @@
+/* グローバルナビ・サブナビ・パンくず（全画面共通） */
+
+.global-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid var(--border, #d8d0c4);
+}
+
+.global-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent, #2d5a4a);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.global-nav a:hover {
+  background: rgba(45, 90, 74, 0.08);
+  text-decoration: none;
+}
+
+.global-nav a[aria-current="page"] {
+  color: #fff;
+  background: var(--accent, #2d5a4a);
+  cursor: default;
+}
+
+.sub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.sub-nav a {
+  color: var(--accent, #2d5a4a);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sub-nav a:hover {
+  text-decoration: underline;
+}
+
+.sub-nav a[aria-current="page"] {
+  color: var(--text, #2c2416);
+  text-decoration: none;
+  cursor: default;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted, #6b5f4f);
+}
+
+.breadcrumb a {
+  color: var(--accent, #2d5a4a);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb__sep {
+  color: var(--border, #d8d0c4);
+  user-select: none;
+}
+
+.breadcrumb__current {
+  color: var(--text, #2c2416);
+  font-weight: 600;
+}
+
+.inquiry-banner {
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius, 10px);
+  background: #e8eef5;
+  color: #2a4365;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}

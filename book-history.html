@@ -6,7 +6,9 @@
   <title>図書貸出履歴 | マスタ保守 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
   <link rel="stylesheet" href="css/auth-bar.css" />
+  <link rel="stylesheet" href="css/global-nav.css" />
   <style>
     *,
     *::before,
@@ -218,18 +220,11 @@
 <body>
   <div class="app">
     <div id="auth-bar"></div>
-    <nav class="nav nav--return" aria-label="図書一覧への復帰">
-      <a href="books.html">← 図書一覧に戻る</a>
-    </nav>
-    <nav class="nav" aria-label="マスタ保守メニュー">
-      <a href="admin.html">マスタ保守</a>
-      <a href="books.html" aria-current="page">図書</a>
-      <a href="categories.html">カテゴリ</a>
-      <a href="students.html">学生</a>
-      <a href="masters.html">学部・学科</a>
-    </nav>
+    <div id="global-nav"></div>
+    <div id="sub-nav"></div>
+    <nav id="breadcrumb"></nav>
 
-    <div class="maintenance-banner" role="note">
+    <div id="zone-banner" class="maintenance-banner" role="note">
       マスタ保守モード — 図書の貸出履歴を照会しています
     </div>
 
@@ -260,7 +255,9 @@
     const HISTORY_TABLE = "libraly_app_lending_history";
 
     const supabaseClient = LibralyAuth.getClient();
-    const bookId = new URLSearchParams(window.location.search).get("id");
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookId = urlParams.get("id");
+    const fromInquiry = urlParams.get("from") === "inquiry";
 
     const messageEl = document.getElementById("message");
     const bookSummaryEl = document.getElementById("book-summary");
@@ -345,7 +342,44 @@
         escapeHtml(book.content) +
         "</p>";
 
-      document.title = book.title + " の貸出履歴 | マスタ保守 | 図書館保守システム";
+      document.title =
+        book.title +
+        " の貸出履歴 | " +
+        (fromInquiry ? "貸出履歴照会" : "マスタ保守") +
+        " | 図書館保守システム";
+
+      if (fromInquiry) {
+        LibralyNav.renderBreadcrumb(document.getElementById("breadcrumb"), [
+          { label: "貸出・返却", href: "index.html" },
+          { label: "貸出履歴照会", href: "inquiry.html" },
+          { label: "図書から照会", href: "books.html?mode=inquiry" },
+          { label: book.title + " の貸出履歴" },
+        ]);
+      } else {
+        LibralyNav.renderBreadcrumb(document.getElementById("breadcrumb"), [
+          { label: "貸出・返却", href: "index.html" },
+          { label: "マスタ保守", href: "admin.html" },
+          { label: "図書マスタ", href: "books.html" },
+          { label: book.title + " の貸出履歴" },
+        ]);
+      }
+    }
+
+    function initPageLayout() {
+      LibralyNav.renderGlobalNav(
+        document.getElementById("global-nav"),
+        fromInquiry ? LibralyNav.SECTION_INQUIRY : LibralyNav.SECTION_MAINTENANCE
+      );
+
+      var banner = document.getElementById("zone-banner");
+      if (fromInquiry) {
+        document.getElementById("sub-nav").hidden = true;
+        banner.className = "inquiry-banner";
+        banner.textContent = "照会モード — 図書の貸出履歴を照会しています";
+      } else {
+        document.getElementById("sub-nav").hidden = false;
+        LibralyNav.renderMaintenanceSubNav(document.getElementById("sub-nav"), "books");
+      }
     }
 
     function renderHistoryList(records) {
@@ -429,6 +463,7 @@
     (async function init() {
       if (!(await LibralyAuth.requireAuth())) return;
       await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+      initPageLayout();
       await loadPage();
     })();
   </script>

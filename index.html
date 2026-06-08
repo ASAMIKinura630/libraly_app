@@ -6,7 +6,9 @@
   <title>貸出・返却 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
   <link rel="stylesheet" href="css/auth-bar.css" />
+  <link rel="stylesheet" href="css/global-nav.css" />
   <style>
     *,
     *::before,
@@ -527,10 +529,7 @@
 
     <div id="app-main" class="is-hidden">
     <div id="auth-bar"></div>
-    <nav class="nav nav--ops" aria-label="メインメニュー">
-      <a href="index.html" aria-current="page">貸出・返却</a>
-      <a href="admin.html" class="nav__admin-link">マスタ保守 →</a>
-    </nav>
+    <div id="global-nav"></div>
 
     <header class="header">
       <h1>貸出・返却</h1>
@@ -1430,6 +1429,10 @@
     async function startApp() {
       showAppMain();
       await LibralyAuth.renderUserBar(document.getElementById("auth-bar"));
+      LibralyNav.renderGlobalNav(
+        document.getElementById("global-nav"),
+        LibralyNav.SECTION_LENDING
+      );
 
       const [booksOk, studentsOk] = await Promise.all([
         loadBooks(),
