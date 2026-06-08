@@ -55,9 +55,16 @@
     return name.trim().length > 0;
   }
 
-  function deriveStaffNumber(email) {
-    const local = (email.split("@")[0] || "user").replace(/[^a-zA-Z0-9._-]/g, "");
-    return (local || "user").slice(0, 32);
+  function normalizeEmail(email) {
+    return (email || "").trim().toLowerCase();
+  }
+
+  function generateStaffNumber() {
+    const uuid =
+      global.crypto && global.crypto.randomUUID
+        ? global.crypto.randomUUID().replace(/-/g, "")
+        : String(Date.now()) + Math.random().toString(16).slice(2);
+    return "STF-" + uuid.slice(0, 8).toUpperCase();
   }
 
   function isUniqueViolation(error) {
@@ -67,20 +74,42 @@
     return code === "23505" || msg.includes("duplicate key");
   }
 
-  async function insertStaffForSignup(email, name) {
-    const baseNumber = deriveStaffNumber(email);
-    const maxAttempts = 5;
+  function staffErrorMessage(error) {
+    if (!error) return "担当者マスタの登録に失敗しました。";
+    const msg = error.message || String(error);
+    const code = error.code || "";
+    if (code === "42P01" || msg.includes("libraly_app_staff")) {
+      return (
+        "担当者マスタのテーブルが未作成です。Supabase の SQL Editor で " +
+        "sql/20260602_add_staff_lending_processor.sql を実行してください。"
+      );
+    }
+    if (code === "42501" || msg.includes("permission denied")) {
+      return "担当者マスタへの登録権限がありません。Supabase の権限設定を確認してください。";
+    }
+    return "担当者マスタの登録に失敗しました。（" + msg + "）";
+  }
+
+  function getStaffNameFromSession(session) {
+    if (!session || !session.user) return "";
+    const meta = session.user.user_metadata || {};
+    return (meta.name || meta.full_name || "").trim();
+  }
+
+  async function insertStaffRecord(email, name) {
+    const normalizedEmail = normalizeEmail(email);
+    const trimmedName = (name || "").trim();
+    const maxAttempts = 8;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const staffNumber =
-        attempt === 0 ? baseNumber : baseNumber + "-" + (attempt + 1);
+      const staffNumber = generateStaffNumber();
 
       const { data, error } = await getClient()
         .from(STAFF_TABLE)
         .insert({
           staff_number: staffNumber,
-          name: name.trim(),
-          email: email,
+          name: trimmedName,
+          email: normalizedEmail,
         })
         .select("id, staff_number, name, email")
         .single();
@@ -102,27 +131,59 @@
     };
   }
 
+  async function ensureStaffForSession(session) {
+    if (!session) {
+      return null;
+    }
+
+    const existing = await resolveStaffFromSession(session);
+    if (existing) {
+      return existing;
+    }
+
+    const name = getStaffNameFromSession(session);
+    if (!name || !session.user.email) {
+      return null;
+    }
+
+    const staffResult = await insertStaffRecord(session.user.email, name);
+    if (staffResult.error) {
+      console.error(staffResult.error);
+      return null;
+    }
+
+    return staffResult.data;
+  }
+
   async function signUpWithStaff({ email, password, name }) {
-    const trimmedEmail = email.trim();
+    const trimmedEmail = normalizeEmail(email);
     const trimmedName = name.trim();
 
     const { data, error } = await getClient().auth.signUp({
       email: trimmedEmail,
       password,
+      options: {
+        data: { name: trimmedName },
+      },
     });
 
     if (error) {
       return { error };
     }
 
-    const staffResult = await insertStaffForSignup(trimmedEmail, trimmedName);
+    const staffResult = await insertStaffRecord(trimmedEmail, trimmedName);
     if (staffResult.error) {
+      console.error(staffResult.error);
+      if (data.session) {
+        return {
+          data,
+          error: null,
+          staff: null,
+          staffWarning: staffErrorMessage(staffResult.error),
+        };
+      }
       return {
-        error: {
-          message:
-            "アカウントは作成されましたが、担当者マスタの登録に失敗しました。マスタ保守の担当者マスタから手動で登録してください。",
-        },
-        session: data.session || null,
+        error: { message: staffErrorMessage(staffResult.error) },
       };
     }
 
@@ -155,7 +216,7 @@
     const { data, error } = await getClient()
       .from(STAFF_TABLE)
       .select("id, staff_number, name, email")
-      .eq("email", session.user.email)
+      .eq("email", normalizeEmail(session.user.email))
       .maybeSingle();
 
     if (error) {
@@ -204,7 +265,7 @@
     if (!session) {
       return null;
     }
-    return resolveStaffFromSession(session);
+    return ensureStaffForSession(session);
   }
 
   global.LibralyAuth = {
@@ -215,6 +276,10 @@
     signOut,
     getCurrentStaff,
     signUpWithStaff,
+    insertStaffRecord,
+    ensureStaffForSession,
+    generateStaffNumber,
+    staffErrorMessage,
     validatePassword,
     validateStaffName,
     authErrorMessage,

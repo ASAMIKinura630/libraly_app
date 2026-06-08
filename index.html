@@ -1472,18 +1472,21 @@
       if (!validateSignupInput(cred.email, name, cred.password)) return;
 
       signupSubmitBtn.disabled = true;
-      const { error } = await LibralyAuth.signUpWithStaff({
+      const signupResult = await LibralyAuth.signUpWithStaff({
         email: cred.email,
         password: cred.password,
         name: name,
       });
       signupSubmitBtn.disabled = false;
 
-      if (error) {
-        alert(LibralyAuth.authErrorMessage(error));
+      if (signupResult.error) {
+        alert(LibralyAuth.authErrorMessage(signupResult.error));
         return;
       }
       await startApp();
+      if (signupResult.staffWarning) {
+        showMessage(signupResult.staffWarning, "error");
+      }
     });
 
     async function startApp() {

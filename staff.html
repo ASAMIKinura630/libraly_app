@@ -124,6 +124,16 @@
       color: var(--muted);
     }
 
+    .staff-number-display {
+      margin: 0;
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
     .edit-hint {
       margin: 0 0 1rem;
       font-size: 0.85rem;
@@ -234,7 +244,7 @@
 
     <header class="header">
       <h1>担当者マスタ保守</h1>
-      <p>職員番号・氏名・ログインメールの登録・一覧・編集・削除</p>
+      <p>氏名・ログインメールの登録・一覧・編集・削除（職員番号は自動採番）</p>
     </header>
 
     <div id="message" class="message" role="status" aria-live="polite"></div>
@@ -245,15 +255,18 @@
 
       <form id="staff-form" novalidate>
         <div class="form-grid">
-          <div class="form-group">
-            <label for="staff-number">職員番号 <span aria-hidden="true">*</span></label>
-            <input type="text" id="staff-number" autocomplete="off" placeholder="例：S001" required />
+          <div id="staff-number-new" class="form-group form-group--full">
+            <span class="form-hint">職員番号は自動採番されます（例：STF-A1B2C3D4）</span>
+          </div>
+          <div id="staff-number-edit" class="form-group form-group--full" hidden>
+            <label>職員番号</label>
+            <p id="staff-number-display" class="staff-number-display"></p>
           </div>
           <div class="form-group">
             <label for="staff-name">氏名 <span aria-hidden="true">*</span></label>
             <input type="text" id="staff-name" autocomplete="name" placeholder="例：山田 太郎" required />
           </div>
-          <div class="form-group form-group--full">
+          <div class="form-group">
             <label for="staff-email">ログインメール <span aria-hidden="true">*</span></label>
             <input type="email" id="staff-email" autocomplete="email" placeholder="例：yamada@example.com" required />
             <span class="form-hint">Supabase Auth でログインするメールアドレスと同一にしてください</span>
@@ -284,7 +297,9 @@
 
     const messageEl = document.getElementById("message");
     const staffForm = document.getElementById("staff-form");
-    const staffNumberInput = document.getElementById("staff-number");
+    const staffNumberNewEl = document.getElementById("staff-number-new");
+    const staffNumberEditEl = document.getElementById("staff-number-edit");
+    const staffNumberDisplayEl = document.getElementById("staff-number-display");
     const staffNameInput = document.getElementById("staff-name");
     const staffEmailInput = document.getElementById("staff-email");
     const saveBtn = document.getElementById("save-btn");
@@ -305,7 +320,6 @@
       isBusy = busy;
       saveBtn.disabled = busy;
       cancelBtn.disabled = busy;
-      staffNumberInput.disabled = busy;
       staffNameInput.disabled = busy;
       staffEmailInput.disabled = busy;
       staffListEl.querySelectorAll("button").forEach(function (btn) {
@@ -335,16 +349,26 @@
 
     function getFormValues() {
       return {
-        staff_number: staffNumberInput.value.trim(),
         name: staffNameInput.value.trim(),
         email: staffEmailInput.value.trim().toLowerCase(),
       };
     }
 
+    function showNewStaffNumberMode() {
+      staffNumberNewEl.hidden = false;
+      staffNumberEditEl.hidden = true;
+    }
+
+    function showEditStaffNumberMode(staffNumber) {
+      staffNumberNewEl.hidden = true;
+      staffNumberEditEl.hidden = false;
+      staffNumberDisplayEl.textContent = staffNumber;
+    }
+
     function validateForm() {
       const values = getFormValues();
-      if (!values.staff_number || !values.name || !values.email) {
-        showMessage("職員番号・氏名・ログインメールを入力してください。", "warn");
+      if (!values.name || !values.email) {
+        showMessage("氏名・ログインメールを入力してください。", "warn");
         return null;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
@@ -360,12 +384,13 @@
       saveBtn.textContent = "保存";
       editHintEl.classList.remove("is-visible");
       cancelBtn.hidden = true;
+      showNewStaffNumberMode();
       renderStaffList();
     }
 
     function enterEditMode(staff) {
       editingId = staff.id;
-      staffNumberInput.value = staff.staff_number;
+      showEditStaffNumberMode(staff.staff_number);
       staffNameInput.value = staff.name;
       staffEmailInput.value = staff.email;
       saveBtn.textContent = "更新";
@@ -447,25 +472,42 @@
         if (editingId) {
           const { error } = await supabaseClient
             .from(TABLE_NAME)
-            .update(values)
+            .update({
+              name: values.name,
+              email: values.email,
+            })
             .eq("id", editingId);
           if (error) throw error;
           clearForm();
           await loadStaff();
           showMessage("担当者を更新しました。", "success");
         } else {
-          const { error } = await supabaseClient.from(TABLE_NAME).insert(values);
-          if (error) throw error;
+          const staffResult = await LibralyAuth.insertStaffRecord(
+            values.email,
+            values.name
+          );
+          if (staffResult.error) {
+            throw staffResult.error;
+          }
           clearForm();
           await loadStaff();
-          showMessage("担当者を登録しました。", "success");
+          showMessage(
+            "担当者を登録しました。（職員番号: " +
+              staffResult.data.staff_number +
+              "）",
+            "success"
+          );
         }
       } catch (err) {
         console.error(err);
         if (err.code === "23505") {
-          showMessage("職員番号またはメールアドレスが既に登録されています。", "error");
+          showMessage("メールアドレスが既に登録されています。", "error");
         } else {
-          showMessage("処理に失敗しました。もう一度お試しください。", "error");
+          showMessage(
+            LibralyAuth.staffErrorMessage(err) ||
+              "処理に失敗しました。もう一度お試しください。",
+            "error"
+          );
         }
       } finally {
         setBusy(false);
