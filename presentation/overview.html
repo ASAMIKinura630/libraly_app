@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>図書館保守システム — 概要</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/auth-bar.css" />
+  <style>
+    *,
+    *::before,
+    *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .hero__badge {
+      display: inline-block;
+      margin-bottom: 0.75rem;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-ring);
+      border-radius: 999px;
+    }
+
+    .hero h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--muted);
+    }
+
+    /* 3ゾーン図 */
+    .diagram-section {
+      margin-bottom: 2rem;
+    }
+
+    .diagram-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .zones {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    @media (min-width: 640px) {
+      .zones {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .zone-card {
+      position: relative;
+      padding: 1.15rem 1rem;
+      text-align: center;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .zone-card--primary {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 100%);
+    }
+
+    .zone-card__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 0.65rem;
+      font-size: 1.4rem;
+      background: var(--panel-alt);
+      border-radius: 12px;
+    }
+
+    .zone-card--primary .zone-card__icon {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .zone-card h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .zone-card p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .zones-connector {
+      display: flex;
+      justify-content: center;
+      margin: 0.5rem 0;
+      color: var(--accent-secondary);
+      font-size: 1.1rem;
+    }
+
+    .db-pill {
+      display: block;
+      margin: 0 auto;
+      max-width: 320px;
+      padding: 0.75rem 1.25rem;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--panel-alt);
+      border: 2px dashed var(--accent-secondary);
+      border-radius: var(--radius);
+    }
+
+    .db-pill span {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    /* 要点リスト */
+    .points {
+      margin: 0 0 2rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .points li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: start;
+      padding: 1.1rem 1.15rem;
+      margin-bottom: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .points li:last-child { margin-bottom: 0; }
+
+    .points__num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .points__body strong {
+      color: var(--accent);
+    }
+
+    .points__body p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    /* 認証・担当者図 */
+    .flow-section {
+      margin-bottom: 2rem;
+    }
+
+    .flow-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 700px) {
+      .flow-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .flow-card {
+      padding: 1.15rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .flow-card h3 {
+      margin: 0 0 0.85rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .flow-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .auth-demo {
+      margin-top: 0.5rem;
+    }
+
+    .auth-demo .auth-bar {
+      margin-bottom: 0;
+    }
+
+    .history-demo {
+      margin-top: 0.65rem;
+      overflow-x: auto;
+    }
+
+    .history-demo table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    .history-demo th,
+    .history-demo td {
+      padding: 0.45rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .history-demo th {
+      font-weight: 600;
+      background: var(--panel-alt);
+    }
+
+    .history-demo .highlight {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <span class="hero__badge">はじめての方へ</span>
+      <h1>図書館保守システム</h1>
+      <p>図書の貸出・返却、履歴照会、マスタ保守を行う図書館システムです。</p>
+    </header>
+
+    <!-- 3ゾーン図 -->
+    <section class="diagram-section" aria-labelledby="zones-heading">
+      <h2 id="zones-heading">3つの画面ゾーン</h2>
+      <div class="zones">
+        <article class="zone-card zone-card--primary">
+          <div class="zone-card__icon" aria-hidden="true">📖</div>
+          <h3>トップ画面</h3>
+          <p>ログイン・新規登録<br>日々の貸出・返却</p>
+        </article>
+        <article class="zone-card">
+          <div class="zone-card__icon" aria-hidden="true">🔍</div>
+          <h3>照会画面</h3>
+          <p>図書または学生から<br>貸出履歴を参照（閲覧のみ）</p>
+        </article>
+        <article class="zone-card">
+          <div class="zone-card__icon" aria-hidden="true">⚙</div>
+          <h3>マスタ保守</h3>
+          <p>図書・学生・カテゴリ<br>学部学科・担当者の管理</p>
+        </article>
+      </div>
+      <div class="zones-connector" aria-hidden="true">▼ ▼ ▼</div>
+      <div class="db-pill">
+        Supabase データベース
+        <span>図書・学生・貸出履歴・担当者</span>
+      </div>
+    </section>
+
+    <!-- 6要点 -->
+    <ol class="points">
+      <li>
+        <span class="points__num" aria-hidden="true">1</span>
+        <div class="points__body">
+          <p>図書の貸出・返却、履歴照会、マスタ保守を行う図書館システムです。</p>
+        </div>
+      </li>
+      <li>
+        <span class="points__num" aria-hidden="true">2</span>
+        <div class="points__body">
+          <p><strong>トップ画面</strong>：ログイン・新規登録、日々の貸出・返却</p>
+        </div>
+      </li>
+      <li>
+        <span class="points__num" aria-hidden="true">3</span>
+        <div class="points__body">
+          <p><strong>照会画面</strong>：図書または学生から貸出履歴を参照（閲覧のみ）</p>
+        </div>
+      </li>
+      <li>
+        <span class="points__num" aria-hidden="true">4</span>
+        <div class="points__body">
+          <p><strong>マスタ保守</strong>：図書・学生・カテゴリ・学部学科・担当者の登録・編集・削除</p>
+        </div>
+      </li>
+      <li>
+        <span class="points__num" aria-hidden="true">5</span>
+        <div class="points__body">
+          <p>メール＋パスワードで全画面を保護（未ログインは利用不可）</p>
+        </div>
+      </li>
+      <li>
+        <span class="points__num" aria-hidden="true">6</span>
+        <div class="points__body">
+          <p>貸出・返却時に処理担当者を自動記録し、履歴と画面上部に氏名を表示</p>
+        </div>
+      </li>
+    </ol>
+
+    <!-- 認証・担当者の図 -->
+    <section class="flow-section" aria-labelledby="flow-heading">
+      <h2 id="flow-heading">ログイン保護と担当者記録</h2>
+      <div class="flow-grid">
+        <div class="flow-card">
+          <h3>🔒 ログインによる保護</h3>
+          <svg class="flow-svg" viewBox="0 0 320 140" role="img" aria-label="未ログインでは業務画面に入れず、ログイン後に全機能が使える流れ">
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#4a6fa5"/>
+              </marker>
+            </defs>
+            <rect x="10" y="10" width="90" height="44" rx="8" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+            <text x="55" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#64748b">未ログイン</text>
+            <text x="55" y="44" text-anchor="middle" font-size="10" fill="#64748b">利用不可</text>
+
+            <rect x="115" y="10" width="90" height="44" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+            <text x="160" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb">ログイン</text>
+            <text x="160" y="44" text-anchor="middle" font-size="10" fill="#1e40af">メール＋PW</text>
+
+            <rect x="220" y="10" width="90" height="44" rx="8" fill="#e8f0fa" stroke="#2563eb" stroke-width="1.5"/>
+            <text x="265" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">全画面</text>
+            <text x="265" y="44" text-anchor="middle" font-size="10" fill="#64748b">利用可能</text>
+
+            <line x1="100" y1="32" x2="113" y2="32" stroke="#4a6fa5" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <line x1="205" y1="32" x2="218" y2="32" stroke="#4a6fa5" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+            <rect x="60" y="75" width="200" height="50" rx="8" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+            <text x="160" y="96" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">業務 / 照会 / マスタ保守</text>
+            <text x="160" y="114" text-anchor="middle" font-size="10" fill="#64748b">いずれも認証が必要</text>
+            <line x1="265" y1="54" x2="265" y2="62" stroke="#4a6fa5" stroke-width="1.5"/>
+            <line x1="160" y1="62" x2="265" y2="62" stroke="#4a6fa5" stroke-width="1.5"/>
+            <line x1="160" y1="62" x2="160" y2="75" stroke="#4a6fa5" stroke-width="1.5" marker-end="url(#arrow)"/>
+          </svg>
+        </div>
+
+        <div class="flow-card">
+          <h3>👤 処理担当者の自動記録</h3>
+          <svg class="flow-svg" viewBox="0 0 320 100" role="img" aria-label="貸出返却操作でログイン担当者が履歴に記録される流れ">
+            <defs>
+              <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#2563eb"/>
+              </marker>
+            </defs>
+            <rect x="10" y="30" width="80" height="40" rx="8" fill="#2563eb"/>
+            <text x="50" y="48" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">貸出・返却</text>
+            <text x="50" y="62" text-anchor="middle" font-size="9" fill="#dbeafe">操作</text>
+
+            <rect x="120" y="30" width="80" height="40" rx="8" fill="#e8f0fa" stroke="#2563eb" stroke-width="1.5"/>
+            <text x="160" y="48" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">ログイン</text>
+            <text x="160" y="62" text-anchor="middle" font-size="9" fill="#64748b">担当者</text>
+
+            <rect x="230" y="30" width="80" height="40" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+            <text x="270" y="48" text-anchor="middle" font-size="11" font-weight="600" fill="#1e40af">履歴に</text>
+            <text x="270" y="62" text-anchor="middle" font-size="9" fill="#1e40af">氏名記録</text>
+
+            <line x1="90" y1="50" x2="118" y2="50" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow2)"/>
+            <line x1="200" y1="50" x2="228" y2="50" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow2)"/>
+
+            <text x="160" y="18" text-anchor="middle" font-size="10" fill="#64748b">画面上部にも担当者氏名を表示</text>
+          </svg>
+
+          <div class="auth-demo">
+            <div class="auth-bar" aria-label="ログイン表示の例">
+              <span class="auth-bar__label">ログイン中:</span>
+              <span class="auth-bar__name">芹優太郎</span>
+              <button type="button" class="auth-bar__logout" disabled>ログアウト</button>
+            </div>
+          </div>
+          <div class="history-demo">
+            <table>
+              <thead>
+                <tr><th>図書</th><th>学生</th><th>貸出担当</th><th>返却担当</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>プログラミング入門</td>
+                  <td>山田 太郎</td>
+                  <td class="highlight">芹優太郎</td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">図書館保守システム — 概要（1ページ）</p>
+  </main>
+</body>
+</html>
