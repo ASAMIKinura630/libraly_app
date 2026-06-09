@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5. 貸出履歴照会 | プレゼンテーション</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/auth-bar.css" />
+  <link rel="stylesheet" href="../css/global-nav.css" />
+  <link rel="stylesheet" href="css/present.css" />
+</head>
+<body>
+  <div class="present">
+    <header class="present__top">
+      <div>
+        <h1 class="present__title">5. 貸出履歴照会</h1>
+        <p class="present__meta">図書館保守システム プレゼンテーション</p>
+      </div>
+      <nav class="present__nav" aria-label="スライド移動">
+        <a href="slide-04-lending.html">← 前へ</a>
+        <a href="index.html">目次</a>
+        <a href="slide-06-admin.html">次へ →</a>
+      </nav>
+    </header>
+
+    <div class="present__body">
+      <div class="present__mockup">
+        <p class="present__mockup-label">画面イメージ — inquiry.html</p>
+        <div class="present__mockup-inner">
+          <div class="mock-app" style="max-width:720px;">
+            <div class="auth-bar">
+              <span class="auth-bar__label">ログイン中:</span>
+              <span class="auth-bar__name">芹優太郎</span>
+              <button type="button" class="auth-bar__logout">ログアウト</button>
+            </div>
+            <nav class="global-nav">
+              <a href="#">貸出・返却</a>
+              <a href="#" aria-current="page">貸出履歴照会</a>
+              <a href="#">マスタ保守</a>
+            </nav>
+
+            <div class="mock-banner mock-banner--inquiry" role="note">
+              照会モード — 貸出履歴の参照のみ行います（貸出・返却の操作はできません）
+            </div>
+
+            <header class="mock-header" style="margin-bottom:0.85rem;">
+              <h1>貸出履歴照会</h1>
+              <p>図書または学生を起点に、貸出履歴を照会します</p>
+            </header>
+
+            <div class="mock-portal-grid">
+              <div class="mock-portal-card">
+                <h3>図書から照会</h3>
+                <p>図書を選び、誰が・いつ借りたかを確認します</p>
+              </div>
+              <div class="mock-portal-card">
+                <h3>学生から照会</h3>
+                <p>学生を選び、何を・いつ借りたかを確認します</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="present__notes">
+        <h2>説明ポイント</h2>
+        <ul>
+          <li>履歴の<strong>閲覧専用</strong>ゾーンです。</li>
+          <li>図書または学生を起点に貸出履歴をたどれます。</li>
+          <li>照会モードでは登録・編集・削除ボタンは表示されません。</li>
+          <li>処理担当者・貸出日・返却日などを確認できます。</li>
+          <li>日常の貸出・返却操作はトップ画面で行います。</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

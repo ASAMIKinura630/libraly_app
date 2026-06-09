@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>6. マスタ保守 | プレゼンテーション</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/auth-bar.css" />
+  <link rel="stylesheet" href="../css/global-nav.css" />
+  <link rel="stylesheet" href="css/present.css" />
+</head>
+<body>
+  <div class="present">
+    <header class="present__top">
+      <div>
+        <h1 class="present__title">6. マスタ保守ポータル</h1>
+        <p class="present__meta">図書館保守システム プレゼンテーション</p>
+      </div>
+      <nav class="present__nav" aria-label="スライド移動">
+        <a href="slide-05-inquiry.html">← 前へ</a>
+        <a href="index.html">目次</a>
+        <a href="slide-07-staff.html">次へ →</a>
+      </nav>
+    </header>
+
+    <div class="present__body">
+      <div class="present__mockup">
+        <p class="present__mockup-label">画面イメージ — admin.html</p>
+        <div class="present__mockup-inner">
+          <div class="mock-app" style="max-width:720px;">
+            <div class="auth-bar">
+              <span class="auth-bar__label">ログイン中:</span>
+              <span class="auth-bar__name">芹優太郎</span>
+              <button type="button" class="auth-bar__logout">ログアウト</button>
+            </div>
+            <nav class="global-nav">
+              <a href="#">貸出・返却</a>
+              <a href="#">貸出履歴照会</a>
+              <a href="#" aria-current="page">マスタ保守</a>
+            </nav>
+
+            <div class="mock-banner mock-banner--warn" role="note">
+              マスタ保守モード — 登録データの追加・変更・削除はこのエリアで行います
+            </div>
+
+            <header class="mock-header" style="margin-bottom:0.85rem;">
+              <h1>マスタ保守</h1>
+              <p>登録データの追加・変更・削除を行います</p>
+            </header>
+
+            <section class="mock-portal-group">
+              <h2 class="mock-portal-group__title">図書・図書カテゴリ</h2>
+              <div class="mock-portal-grid">
+                <div class="mock-portal-card">
+                  <h3>図書マスタ</h3>
+                  <p>図書の登録・変更・削除</p>
+                </div>
+                <div class="mock-portal-card">
+                  <h3>図書カテゴリマスタ</h3>
+                  <p>カテゴリの登録・変更・削除</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="mock-portal-group">
+              <h2 class="mock-portal-group__title">学生・学部</h2>
+              <div class="mock-portal-grid">
+                <div class="mock-portal-card">
+                  <h3>学生マスタ</h3>
+                  <p>学籍番号・氏名・学部学科</p>
+                </div>
+                <div class="mock-portal-card">
+                  <h3>学部・学科マスタ</h3>
+                  <p>学部（親）と学科（子）の管理</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="mock-portal-group" style="margin-bottom:0;">
+              <h2 class="mock-portal-group__title">担当者</h2>
+              <div class="mock-portal-grid">
+                <div class="mock-portal-card">
+                  <h3>担当者マスタ</h3>
+                  <p>氏名・ログインメール（職員番号は自動採番）</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <aside class="present__notes">
+        <h2>説明ポイント</h2>
+        <ul>
+          <li>マスタデータを管理する<strong>入口画面</strong>です。</li>
+          <li>3グループに整理：図書・カテゴリ／学生・学部／担当者。</li>
+          <li>変更内容は貸出画面の選択肢に反映されます。</li>
+          <li>日常の貸出・返却はトップ画面で行ってください。</li>
+          <li>担当者マスタはログインメールと紐づけが必要です。</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

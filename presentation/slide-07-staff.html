@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>7. 担当者マスタ | プレゼンテーション</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/auth-bar.css" />
+  <link rel="stylesheet" href="../css/global-nav.css" />
+  <link rel="stylesheet" href="css/present.css" />
+</head>
+<body>
+  <div class="present">
+    <header class="present__top">
+      <div>
+        <h1 class="present__title">7. 担当者マスタ</h1>
+        <p class="present__meta">図書館保守システム プレゼンテーション</p>
+      </div>
+      <nav class="present__nav" aria-label="スライド移動">
+        <a href="slide-06-admin.html">← 前へ</a>
+        <a href="index.html">目次</a>
+        <a href="slide-08-summary.html">次へ →</a>
+      </nav>
+    </header>
+
+    <div class="present__body">
+      <div class="present__mockup">
+        <p class="present__mockup-label">画面イメージ — staff.html</p>
+        <div class="present__mockup-inner">
+          <div class="mock-app">
+            <div class="auth-bar">
+              <span class="auth-bar__label">ログイン中:</span>
+              <span class="auth-bar__name">芹優太郎</span>
+              <button type="button" class="auth-bar__logout">ログアウト</button>
+            </div>
+            <nav class="global-nav">
+              <a href="#">貸出・返却</a>
+              <a href="#">貸出履歴照会</a>
+              <a href="#" aria-current="page">マスタ保守</a>
+            </nav>
+
+            <div class="mock-banner mock-banner--warn" role="note">
+              マスタ保守モード — 変更内容は貸出・返却の処理者記録に影響します
+            </div>
+
+            <header class="mock-header" style="margin-bottom:0.75rem;">
+              <h1>担当者マスタ保守</h1>
+              <p>氏名・ログインメールの登録・一覧・編集・削除（職員番号は自動採番）</p>
+            </header>
+
+            <div class="mock-card">
+              <h2>担当者の登録・編集</h2>
+              <p class="mock-form-hint" style="margin:0 0 0.75rem;">職員番号は自動採番されます（例：STF-A1B2C3D4）</p>
+              <div class="mock-form-group">
+                <label>氏名</label>
+                <input type="text" value="芹優太郎" readonly />
+              </div>
+              <div class="mock-form-group">
+                <label>ログインメール</label>
+                <input type="email" value="no_rio_no_life@yahoo.co.jp" readonly />
+                <span class="mock-form-hint">Supabase Auth でログインするメールアドレスと同一にしてください</span>
+              </div>
+              <button type="button" class="mock-btn mock-btn--primary">保存</button>
+            </div>
+
+            <div class="mock-card" style="margin-bottom:0;">
+              <div class="mock-table-wrap">
+                <table class="mock-table">
+                  <thead>
+                    <tr>
+                      <th>職員番号</th>
+                      <th>氏名</th>
+                      <th>ログインメール</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>STF-A1B2C3D4</td>
+                      <td>芹優太郎</td>
+                      <td>no_rio_no_life@yahoo.co.jp</td>
+                      <td>
+                        <button type="button" class="mock-btn mock-btn--outline" style="min-height:32px;padding:0.25rem 0.5rem;font-size:0.78rem;">編集</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <p style="margin:0.75rem 0 0;font-size:0.8rem;color:var(--muted);">
+              新規登録 ──→ Auth作成 ──→ 担当者マスタへ自動追加
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="present__notes">
+        <h2>説明ポイント</h2>
+        <ul>
+          <li>貸出・返却の<strong>処理者</strong>を管理するマスタです。</li>
+          <li>職員番号は <code>STF-</code> + ランダム8桁で自動採番されます。</li>
+          <li>ログインメールは Supabase Auth と一致させる必要があります。</li>
+          <li>新規登録時にも担当者マスタへ自動登録されます。</li>
+          <li>担当者未登録のままでは貸出・返却ができません。</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

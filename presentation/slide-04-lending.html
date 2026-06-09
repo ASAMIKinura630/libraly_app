@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4. 貸出・返却 | プレゼンテーション</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/auth-bar.css" />
+  <link rel="stylesheet" href="../css/global-nav.css" />
+  <link rel="stylesheet" href="css/present.css" />
+</head>
+<body>
+  <div class="present">
+    <header class="present__top">
+      <div>
+        <h1 class="present__title">4. 貸出・返却画面</h1>
+        <p class="present__meta">図書館保守システム プレゼンテーション</p>
+      </div>
+      <nav class="present__nav" aria-label="スライド移動">
+        <a href="slide-03-common-header.html">← 前へ</a>
+        <a href="index.html">目次</a>
+        <a href="slide-05-inquiry.html">次へ →</a>
+      </nav>
+    </header>
+
+    <div class="present__body">
+      <div class="present__mockup">
+        <p class="present__mockup-label">画面イメージ — index.html（ログイン後）</p>
+        <div class="present__mockup-inner">
+          <div class="mock-app">
+            <div class="auth-bar">
+              <span class="auth-bar__label">ログイン中:</span>
+              <span class="auth-bar__name">芹優太郎</span>
+              <button type="button" class="auth-bar__logout">ログアウト</button>
+            </div>
+            <nav class="global-nav">
+              <a href="#" aria-current="page">貸出・返却</a>
+              <a href="#">貸出履歴照会</a>
+              <a href="#">マスタ保守</a>
+            </nav>
+
+            <header class="mock-header" style="margin-bottom:0.75rem;">
+              <h1>貸出・返却</h1>
+              <p>図書の貸出登録と返却処理</p>
+            </header>
+
+            <div class="mock-card">
+              <h2>貸出登録</h2>
+              <div class="mock-lend-panels">
+                <section class="mock-lend-panel mock-lend-panel--book">
+                  <h3 class="mock-lend-panel__title">図書を指定</h3>
+                  <div class="mock-form-group">
+                    <label>図書</label>
+                    <select><option>プログラミング入門</option></select>
+                  </div>
+                </section>
+                <section class="mock-lend-panel mock-lend-panel--student">
+                  <h3 class="mock-lend-panel__title">学生を指定</h3>
+                  <div class="mock-form-group">
+                    <label>学生</label>
+                    <select><option>20240001 山田 太郎</option></select>
+                  </div>
+                </section>
+              </div>
+              <button type="button" class="mock-btn mock-btn--primary">貸出する</button>
+            </div>
+
+            <div class="mock-card">
+              <h2>貸し出し履歴</h2>
+              <div class="mock-table-wrap">
+                <table class="mock-table">
+                  <thead>
+                    <tr>
+                      <th>図書</th>
+                      <th>学生</th>
+                      <th>貸出日</th>
+                      <th>状態</th>
+                      <th>貸出担当</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>プログラミング入門</td>
+                      <td>山田 太郎</td>
+                      <td>2026/06/01</td>
+                      <td><span class="mock-badge mock-badge--lending">貸出中</span></td>
+                      <td>芹優太郎</td>
+                      <td><button type="button" class="mock-btn mock-btn--return">返却する</button></td>
+                    </tr>
+                    <tr>
+                      <td>データベース設計</td>
+                      <td>佐藤 花子</td>
+                      <td>2026/05/20</td>
+                      <td><span class="mock-badge mock-badge--returned">返却済</span></td>
+                      <td>芹優太郎</td>
+                      <td>—</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="present__notes">
+        <h2>説明ポイント</h2>
+        <ul>
+          <li>日常業務の<strong>メイン画面</strong>です。</li>
+          <li>図書と学生を選んで「貸出する」で登録します。</li>
+          <li>貸出中の行から「返却する」で返却処理します。</li>
+          <li>貸出・返却時に<strong>ログイン担当者</strong>が自動記録されます。</li>
+          <li>履歴テーブルに貸出担当・返却担当が表示されます。</li>
+          <li>図書名・著者・学生名で履歴を検索できます。</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

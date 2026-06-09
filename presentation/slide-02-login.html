@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2. ログイン前 | プレゼンテーション</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="css/present.css" />
+</head>
+<body>
+  <div class="present">
+    <header class="present__top">
+      <div>
+        <h1 class="present__title">2. ログイン前（トップ画面）</h1>
+        <p class="present__meta">図書館保守システム プレゼンテーション</p>
+      </div>
+      <nav class="present__nav" aria-label="スライド移動">
+        <a href="slide-01-overview.html">← 前へ</a>
+        <a href="index.html">目次</a>
+        <a href="slide-03-common-header.html">次へ →</a>
+      </nav>
+    </header>
+
+    <div class="present__body">
+      <div class="present__mockup">
+        <p class="present__mockup-label">画面イメージ — index.html（未ログイン）</p>
+        <div class="present__mockup-inner">
+          <div class="mock-app" style="max-width:420px;">
+            <header class="mock-header" style="margin-bottom:0.85rem;">
+              <h1>図書館保守システム</h1>
+              <p>メールアドレスとパスワードでログインしてください</p>
+            </header>
+
+            <div class="mock-auth-tabs">
+              <button type="button" class="is-active">ログイン</button>
+              <button type="button">新規登録</button>
+            </div>
+
+            <div class="mock-card">
+              <div class="mock-form-group">
+                <label>メールアドレス</label>
+                <input type="email" value="yamada@example.com" readonly />
+              </div>
+              <div class="mock-form-group">
+                <label>パスワード</label>
+                <input type="password" value="********" readonly />
+              </div>
+              <button type="button" class="mock-btn mock-btn--primary" style="width:100%;">ログイン</button>
+            </div>
+
+            <p style="margin:0.75rem 0 0;font-size:0.8rem;color:var(--muted);text-align:center;">
+              ※ 未ログインでは他画面へ進めません
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="present__notes">
+        <h2>説明ポイント</h2>
+        <ul>
+          <li>初回アクセス時は<strong>ログイン画面のみ</strong>表示されます。</li>
+          <li>メールアドレス＋パスワードで認証（Supabase Auth）。</li>
+          <li><strong>新規登録</strong>タブで氏名・メール・パスワードを入力できます。</li>
+          <li>新規登録時、担当者マスタにも自動登録されます。</li>
+          <li>未ログイン状態では業務・照会・マスタ画面は利用不可です。</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

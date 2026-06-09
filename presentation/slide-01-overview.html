@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1. 全体構成 | プレゼンテーション</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="css/present.css" />
+</head>
+<body>
+  <div class="present">
+    <header class="present__top">
+      <div>
+        <h1 class="present__title">1. 全体構成（3ゾーン）</h1>
+        <p class="present__meta">図書館保守システム プレゼンテーション</p>
+      </div>
+      <nav class="present__nav" aria-label="スライド移動">
+        <a href="index.html">目次</a>
+        <a href="slide-02-login.html">次へ →</a>
+      </nav>
+    </header>
+
+    <div class="present__body">
+      <div class="present__mockup">
+        <p class="present__mockup-label">画面イメージ — システム全体</p>
+        <div class="present__mockup-inner">
+          <div class="mock-app">
+            <header class="mock-header" style="text-align:center;margin-bottom:1rem;">
+              <h1>図書館保守システム</h1>
+              <p>図書の貸出・返却、履歴照会、マスタ保守</p>
+            </header>
+
+            <div class="mock-diagram">
+              <div class="mock-diagram__zones">
+                <div class="mock-diagram__zone mock-diagram__zone--active">
+                  <h3>業務ゾーン</h3>
+                  <p>index.html</p>
+                  <p>貸出・返却</p>
+                </div>
+                <div class="mock-diagram__zone">
+                  <h3>照会ゾーン</h3>
+                  <p>inquiry.html</p>
+                  <p>履歴を見る</p>
+                </div>
+                <div class="mock-diagram__zone">
+                  <h3>マスタ保守</h3>
+                  <p>admin.html</p>
+                  <p>データ登録</p>
+                </div>
+              </div>
+              <div class="mock-diagram__arrow">▼ ▼ ▼</div>
+              <div class="mock-diagram__db">
+                Supabase DB<br>
+                <span style="font-weight:400;font-size:0.85rem;color:var(--muted);">図書・学生・貸出履歴・担当者</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="present__notes">
+        <h2>説明ポイント</h2>
+        <ul>
+          <li>Webブラウザで動作する図書館向けシステムです。</li>
+          <li>画面上部のナビで<strong>3つのゾーン</strong>を切り替えます。</li>
+          <li><strong>業務</strong>：日々の貸出・返却（トップ画面）</li>
+          <li><strong>照会</strong>：履歴の参照のみ（変更不可）</li>
+          <li><strong>マスタ保守</strong>：図書・学生・担当者などの登録・編集</li>
+          <li>データは Supabase に保存されます。</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>
