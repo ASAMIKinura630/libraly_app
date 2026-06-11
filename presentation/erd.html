@@ -25,42 +25,73 @@
     <div class="erd-canvas-wrap">
       <svg viewBox="0 0 700 575" role="img" aria-label="図書館保守システムのER図。7テーブルと外部認証の関係を示す" font-family="'Segoe UI','Hiragino Sans','Meiryo',sans-serif">
         <defs>
-          <marker id="erd-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#4a6fa5"/>
+          <marker id="erd-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
           </marker>
+          <g id="crow-one">
+            <line x1="0" y1="0" x2="0" y2="16" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round"/>
+          </g>
           <g id="crow-many">
-            <path d="M0,0 L0,10 M-5,10 L0,0 L5,10" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+            <path d="M0,0 L0,16 M-8,16 L0,0 L8,16" stroke="#1d4ed8" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
         </defs>
 
         <!-- リレーション線 -->
-        <path d="M165 70 L230 70" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
-        <use href="#crow-many" transform="translate(230,65)"/>
-        <text x="197" y="60" font-size="10" fill="#64748b" text-anchor="middle">1:N</text>
+        <path d="M165 70 L230 70" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <use href="#crow-one" transform="translate(165,62)"/>
+        <use href="#crow-many" transform="translate(230,62)"/>
+        <g>
+          <rect x="178" y="48" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="198" y="61" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
+        </g>
 
-        <path d="M310 172 L310 204 L293 204" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
-        <use href="#crow-many" transform="translate(285,199)"/>
+        <path d="M310 172 L310 204 L293 204" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <use href="#crow-one" transform="translate(310,156)"/>
+        <use href="#crow-many" transform="translate(285,196)"/>
+        <g>
+          <rect x="296" y="178" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="316" y="191" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
+        </g>
 
-        <path d="M165 470 L180 470" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
-        <use href="#crow-many" transform="translate(180,465)"/>
-        <text x="172" y="460" font-size="10" fill="#64748b" text-anchor="middle">1:N</text>
+        <path d="M165 470 L180 470" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <use href="#crow-one" transform="translate(165,462)"/>
+        <use href="#crow-many" transform="translate(180,462)"/>
+        <g>
+          <rect x="148" y="398" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="168" y="411" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
+        </g>
 
-        <path d="M335 470 L530 470" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
-        <use href="#crow-many" transform="translate(530,465)"/>
+        <path d="M335 470 L530 470" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <use href="#crow-one" transform="translate(335,462)"/>
+        <use href="#crow-many" transform="translate(530,462)"/>
+        <g>
+          <rect x="408" y="398" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="428" y="411" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
+        </g>
 
-        <path d="M607 420 L607 372 L440 372" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
-        <use href="#crow-many" transform="translate(432,367)"/>
-        <text x="525" y="395" font-size="9" fill="#94a3b8">学籍番号</text>
+        <path d="M607 420 L607 372 L440 372" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <use href="#crow-one" transform="translate(607,404)"/>
+        <use href="#crow-many" transform="translate(440,364)"/>
+        <g>
+          <rect x="498" y="378" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="518" y="391" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
+        </g>
 
-        <path d="M607 138 L607 168 L455 168 L455 204" stroke="#2563eb" stroke-width="1.5" fill="none"/>
-        <text x="530" y="160" font-size="9" fill="#2563eb">貸出処理者</text>
-        <use href="#crow-many" transform="translate(447,199)"/>
+        <path d="M607 138 L607 168 L455 168 L455 204" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <use href="#crow-one" transform="translate(607,122)"/>
+        <use href="#crow-many" transform="translate(447,196)"/>
+        <g>
+          <rect x="518" y="148" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="538" y="161" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
+        </g>
+        <text x="478" y="160" font-size="11" font-weight="600" fill="#1d4ed8">貸出処理者</text>
 
-        <path d="M685 138 L685 178 L465 178 L465 204" stroke="#1d4ed8" stroke-width="1.5" fill="none"/>
-        <text x="575" y="170" font-size="9" fill="#1d4ed8">返却処理者</text>
+        <path d="M685 138 L685 178 L465 178 L465 204" stroke="#1d4ed8" stroke-width="2.5" fill="none"/>
+        <use href="#crow-many" transform="translate(457,196)"/>
+        <text x="558" y="170" font-size="11" font-weight="600" fill="#1d4ed8">返却処理者</text>
 
-        <path d="M612 78 L655 78 L655 148" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,4" fill="none" marker-end="url(#erd-arrow)"/>
-        <text x="635" y="68" font-size="9" fill="#94a3b8" text-anchor="middle">メール一致</text>
+        <path d="M612 78 L655 78 L655 148" stroke="#64748b" stroke-width="2" stroke-dasharray="5,4" fill="none" marker-end="url(#erd-arrow)"/>
+        <text x="635" y="68" font-size="11" font-weight="600" fill="#475569" text-anchor="middle">メール一致</text>
 
         <!-- 図書カテゴリマスタ -->
         <g>
@@ -165,7 +196,7 @@
 
         <!-- 凡例 -->
         <g transform="translate(15, 250)">
-          <rect x="0" y="0" width="148" height="118" rx="6" fill="#fff" stroke="#c5d4e8" stroke-width="1"/>
+          <rect x="0" y="0" width="148" height="128" rx="6" fill="#fff" stroke="#c5d4e8" stroke-width="1"/>
           <text x="74" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">凡例</text>
           <text x="10" y="44" font-size="10" fill="#b45309" font-weight="700">PK</text>
           <text x="32" y="44" font-size="10" fill="#64748b">主キー</text>
@@ -175,8 +206,9 @@
           <text x="32" y="80" font-size="10" fill="#64748b">一意</text>
           <line x1="10" y1="96" x2="36" y2="96" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
           <text x="40" y="100" font-size="9" fill="#64748b">論理参照</text>
-          <path d="M10 116 L10 126 M5 126 L10 116 L15 126" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
-          <text x="20" y="124" font-size="9" fill="#64748b">1対多</text>
+          <line x1="10" y1="110" x2="10" y2="124" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M28 110 L28 124 M20 124 L28 110 L36 124" stroke="#1d4ed8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <text x="42" y="122" font-size="11" font-weight="600" fill="#1d4ed8">1 : N</text>
         </g>
       </svg>
     </div>
