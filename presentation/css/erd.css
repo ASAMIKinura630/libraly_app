@@ -24,141 +24,22 @@
 }
 
 .erd-canvas-wrap {
+  overflow: auto;
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  -webkit-overflow-scrolling: touch;
 }
 
-/* 横並びテーブル行 */
-.erd-diagram {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.erd-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.5rem;
-  padding: 0.65rem 0.75rem;
-  font-size: 14px;
-  line-height: 1.4;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.erd-row--external {
-  border-style: dashed;
-  border-color: #94a3b8;
-  background: #f1f5f9;
-}
-
-.erd-row--hub {
-  border-color: var(--accent);
-  border-width: 2px;
-  background: var(--accent-soft);
-}
-
-.erd-file {
-  flex-shrink: 0;
-  padding: 0.3rem 0.55rem;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  background: var(--accent);
-  border-radius: 6px;
-  white-space: nowrap;
-}
-
-.erd-row--external .erd-file {
-  background: #64748b;
-}
-
-.erd-row--hub .erd-file {
-  background: var(--accent-hover);
-}
-
-.erd-sep {
-  flex-shrink: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.erd-uk {
-  flex-shrink: 0;
-  padding: 0.28rem 0.5rem;
-  font-size: 13px;
-  font-weight: 700;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  border-radius: 6px;
-  white-space: nowrap;
-}
-
-.erd-field {
-  flex-shrink: 0;
-  padding: 0.28rem 0.5rem;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  white-space: nowrap;
-}
-
-.erd-field--fk {
-  color: #1e40af;
-  background: #dbeafe;
-  border-color: #93c5fd;
-}
-
-.erd-link {
-  margin: 0.15rem 0 0.15rem 1rem;
-  padding-left: 0.75rem;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-secondary);
-  border-left: 3px solid var(--accent-secondary);
-}
-
-.erd-link--logic {
-  color: #64748b;
-  border-left-color: #94a3b8;
-  border-left-style: dashed;
-}
-
-.erd-format-note {
-  margin: 0 0 0.85rem;
-  padding: 0.55rem 0.75rem;
-  font-size: 12px;
-  color: var(--muted);
-  background: var(--panel-alt);
-  border-radius: 8px;
-}
-
-.erd-inline-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.erd-inline-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+.erd-canvas-wrap svg {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  margin: 0 auto;
 }
 
 .erd-legend {
