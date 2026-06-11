@@ -24,7 +24,7 @@
 }
 
 .erd-canvas-wrap {
-  overflow: auto;
+  overflow-x: auto;
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: var(--surface);
@@ -34,12 +34,138 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.erd-canvas-wrap svg {
-  display: block;
-  width: 100%;
-  max-width: 700px;
-  height: auto;
-  margin: 0 auto;
+.erd-diagram {
+  min-width: min(100%, 680px);
+}
+
+/* テーブル1行（横並び） */
+.erd-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.erd-row--accent {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.erd-row--external {
+  border-style: dashed;
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.erd-row__file {
+  flex-shrink: 0;
+  padding: 0.3rem 0.55rem;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: Consolas, "Courier New", monospace;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.erd-row--external .erd-row__file {
+  background: #64748b;
+}
+
+.erd-row__slash {
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.erd-row__uk {
+  flex-shrink: 0;
+  padding: 0.28rem 0.55rem;
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.erd-row__field {
+  flex-shrink: 0;
+  padding: 0.28rem 0.55rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.erd-row__field--fk {
+  color: #1e40af;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* リレーション行 */
+.erd-rel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0 0.2rem 1.1rem;
+  font-size: 12px;
+  color: var(--accent-secondary);
+}
+
+.erd-rel--dashed {
+  color: #94a3b8;
+}
+
+.erd-rel__line {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.erd-rel__label {
+  font-weight: 600;
+}
+
+.erd-rel--group {
+  margin-top: 0.15rem;
+}
+
+/* 図内凡例 */
+.erd-inline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.erd-mark-uk {
+  color: #92400e;
+}
+
+.erd-mark-fk {
+  color: #1e40af;
+}
+
+.erd-mark-rel {
+  color: var(--accent-secondary);
 }
 
 .erd-legend {
