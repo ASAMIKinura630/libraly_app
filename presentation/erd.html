@@ -19,134 +19,113 @@
   <main class="erd-page">
     <header class="erd-page__header">
       <h1>DB(ERD) — エンティティ・リレーションシップ・ダイヤグラム</h1>
-      <p>各テーブルを「ファイル名 / ユニークキー　フィールド…」の横並びで表示</p>
+      <p>図書館保守システムで使用する全7テーブル（＋認証）の相関図</p>
     </header>
 
     <div class="erd-canvas-wrap">
-      <div class="erd-diagram" role="img" aria-label="図書館保守システムのER図">
+      <p class="erd-format-note">表記形式：<strong>ファイル名 / ユニークキー　フィールド　フィールド …</strong>（横並び）</p>
+
+      <div class="erd-diagram" role="img" aria-label="図書館保守システムのER図。各テーブルを横並びで表示">
 
         <div class="erd-row">
-          <span class="erd-row__file">libraly_app_category</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">ID</span>
-          <span class="erd-row__field">カテゴリ名</span>
-          <span class="erd-row__field">登録日時</span>
+          <span class="erd-file">libraly_app_category</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-uk">name</span>
+          <span class="erd-field">登録日時</span>
         </div>
-
-        <div class="erd-rel" aria-hidden="true">
-          <span class="erd-rel__line">│</span>
-          <span class="erd-rel__label">1 : N → 図書マスタ（カテゴリID）</span>
-        </div>
+        <p class="erd-link">1 : N → libraly_app（カテゴリID・削除時NULL）</p>
 
         <div class="erd-row">
-          <span class="erd-row__file">libraly_app</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">ID</span>
-          <span class="erd-row__field erd-row__field--fk">カテゴリID</span>
-          <span class="erd-row__field">タイトル</span>
-          <span class="erd-row__field">あらすじ</span>
-          <span class="erd-row__field">著者</span>
-          <span class="erd-row__field">登録日時</span>
+          <span class="erd-file">libraly_app</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-field">タイトル</span>
+          <span class="erd-field">あらすじ</span>
+          <span class="erd-field">著者</span>
+          <span class="erd-field erd-field--fk">カテゴリID</span>
+          <span class="erd-field">登録日時</span>
         </div>
-
-        <div class="erd-rel" aria-hidden="true">
-          <span class="erd-rel__line">│</span>
-          <span class="erd-rel__label">1 : N → 図書貸出履歴（図書ID）</span>
-        </div>
-
-        <div class="erd-row erd-row--accent">
-          <span class="erd-row__file">libraly_app_lending_history</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">ID</span>
-          <span class="erd-row__field erd-row__field--fk">図書ID</span>
-          <span class="erd-row__field erd-row__field--fk">学籍番号</span>
-          <span class="erd-row__field">返却フラグ</span>
-          <span class="erd-row__field">返却予定日</span>
-          <span class="erd-row__field">返却日時</span>
-          <span class="erd-row__field">貸出日時</span>
-          <span class="erd-row__field erd-row__field--fk">貸出処理者ID</span>
-          <span class="erd-row__field erd-row__field--fk">返却処理者ID</span>
-        </div>
-
-        <div class="erd-rel" aria-hidden="true">
-          <span class="erd-rel__line">│</span>
-          <span class="erd-rel__label">1 : N ← 学生マスタ（学籍番号）</span>
-        </div>
+        <p class="erd-link">1 : N → libraly_app_lending_history（図書ID）</p>
 
         <div class="erd-row">
-          <span class="erd-row__file">libraly_app_student</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">学籍番号</span>
-          <span class="erd-row__field erd-row__field--fk">学科ID</span>
-          <span class="erd-row__field">氏名</span>
-          <span class="erd-row__field">生年月日</span>
-          <span class="erd-row__field">登録日時</span>
+          <span class="erd-file">libraly_app_faculty</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-uk">name</span>
+          <span class="erd-field">登録日時</span>
         </div>
-
-        <div class="erd-rel" aria-hidden="true">
-          <span class="erd-rel__line">│</span>
-          <span class="erd-rel__label">1 : N → 学科マスタ（学科ID）</span>
-        </div>
+        <p class="erd-link">1 : N → libraly_app_department（学部ID）</p>
 
         <div class="erd-row">
-          <span class="erd-row__file">libraly_app_department</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">ID</span>
-          <span class="erd-row__field erd-row__field--fk">学部ID</span>
-          <span class="erd-row__field">学科名</span>
-          <span class="erd-row__field">登録日時</span>
+          <span class="erd-file">libraly_app_department</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-uk">(学部ID+学科名)</span>
+          <span class="erd-field erd-field--fk">学部ID</span>
+          <span class="erd-field">学科名</span>
+          <span class="erd-field">登録日時</span>
         </div>
-
-        <div class="erd-rel" aria-hidden="true">
-          <span class="erd-rel__line">│</span>
-          <span class="erd-rel__label">1 : N → 学部マスタ（学部ID）</span>
-        </div>
+        <p class="erd-link">1 : N → libraly_app_student（学科ID）</p>
 
         <div class="erd-row">
-          <span class="erd-row__file">libraly_app_faculty</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">ID</span>
-          <span class="erd-row__field">学部名</span>
-          <span class="erd-row__field">登録日時</span>
+          <span class="erd-file">libraly_app_student</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-uk">学籍番号</span>
+          <span class="erd-field">氏名</span>
+          <span class="erd-field erd-field--fk">学科ID</span>
+          <span class="erd-field">生年月日</span>
+          <span class="erd-field">登録日時</span>
         </div>
-
-        <div class="erd-rel erd-rel--group" aria-hidden="true">
-          <span class="erd-rel__line">│</span>
-          <span class="erd-rel__label">1 : N → 図書貸出履歴（貸出処理者ID・返却処理者ID）</span>
-        </div>
+        <p class="erd-link">1 : N → libraly_app_lending_history（学籍番号）</p>
 
         <div class="erd-row">
-          <span class="erd-row__file">libraly_app_staff</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">職員番号</span>
-          <span class="erd-row__field">氏名</span>
-          <span class="erd-row__field">メールアドレス</span>
-          <span class="erd-row__field">登録日時</span>
+          <span class="erd-file">libraly_app_staff</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-uk">職員番号</span>
+          <span class="erd-uk">メールアドレス</span>
+          <span class="erd-field">氏名</span>
+          <span class="erd-field">登録日時</span>
         </div>
-
-        <div class="erd-rel erd-rel--dashed" aria-hidden="true">
-          <span class="erd-rel__line">┊</span>
-          <span class="erd-rel__label">メールアドレス一致（論理参照）</span>
-        </div>
+        <p class="erd-link">1 : N → libraly_app_lending_history（貸出・返却処理者ID）</p>
+        <p class="erd-link erd-link--logic">メール一致 ↔ auth.users（論理紐づけ）</p>
 
         <div class="erd-row erd-row--external">
-          <span class="erd-row__file">auth.users</span>
-          <span class="erd-row__slash">/</span>
-          <span class="erd-row__uk">メールアドレス</span>
-          <span class="erd-row__field">（Supabase Auth）</span>
+          <span class="erd-file">auth.users</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-uk">メールアドレス</span>
+          <span class="erd-field">（Supabase Auth・DB外部）</span>
         </div>
 
-        <div class="erd-inline-legend">
-          <span><strong class="erd-mark-uk">ユニークキー</strong> テーブルを一意に識別</span>
-          <span><strong class="erd-mark-fk">外部キー</strong> 他テーブル参照</span>
-          <span><strong class="erd-mark-rel">│</strong> 1対多の関連</span>
+        <div class="erd-row erd-row--hub">
+          <span class="erd-file">libraly_app_lending_history</span>
+          <span class="erd-sep">/</span>
+          <span class="erd-uk">id</span>
+          <span class="erd-field erd-field--fk">図書ID</span>
+          <span class="erd-field erd-field--fk">学籍番号</span>
+          <span class="erd-field">返却フラグ</span>
+          <span class="erd-field">返却予定日</span>
+          <span class="erd-field">返却日時</span>
+          <span class="erd-field">貸出日時</span>
+          <span class="erd-field erd-field--fk">貸出処理者ID</span>
+          <span class="erd-field erd-field--fk">返却処理者ID</span>
+        </div>
+
+        <div class="erd-inline-legend" aria-label="凡例">
+          <span><span class="erd-file" style="font-size:11px;padding:0.15rem 0.35rem;">ファイル名</span> テーブル名</span>
+          <span><span class="erd-uk" style="font-size:11px;">id</span> ユニークキー（PK・UNIQUE）</span>
+          <span><span class="erd-field" style="font-size:11px;">項目</span> フィールド</span>
+          <span><span class="erd-field erd-field--fk" style="font-size:11px;">FK</span> 外部キー</span>
         </div>
       </div>
     </div>
 
     <div class="erd-legend">
       <section class="erd-legend__card">
-        <h2>テーブル一覧（全7＋認証）</h2>
+        <h2>テーブル一覧（全7）</h2>
         <ul class="erd-table-list">
           <li><code>libraly_app_category</code> — 図書カテゴリマスタ</li>
           <li><code>libraly_app</code> — 図書マスタ</li>
@@ -155,7 +134,6 @@
           <li><code>libraly_app_student</code> — 学生マスタ</li>
           <li><code>libraly_app_staff</code> — 担当者マスタ</li>
           <li><code>libraly_app_lending_history</code> — 図書貸出履歴</li>
-          <li><code>auth.users</code> — 認証（DB外・論理参照）</li>
         </ul>
       </section>
       <section class="erd-legend__card">
