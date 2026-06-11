@@ -1,0 +1,102 @@
+/* DB(ERD) ページ */
+
+.erd-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2.5rem;
+}
+
+.erd-page__header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.erd-page__header h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 700;
+}
+
+.erd-page__header p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.erd-canvas-wrap {
+  overflow: auto;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  -webkit-overflow-scrolling: touch;
+}
+
+.erd-canvas-wrap svg {
+  display: block;
+  min-width: 1040px;
+  height: auto;
+}
+
+.erd-legend {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 700px) {
+  .erd-legend {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.erd-legend__card {
+  padding: 1rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.erd-legend__card h2 {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.erd-legend__card ul {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.88rem;
+}
+
+.erd-legend__card li {
+  margin-bottom: 0.35rem;
+}
+
+.erd-legend__card li:last-child {
+  margin-bottom: 0;
+}
+
+.erd-table-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.erd-table-list li {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.erd-table-list li:last-child {
+  border-bottom: none;
+}
+
+.erd-table-list code {
+  font-size: 0.82rem;
+  color: var(--accent);
+}

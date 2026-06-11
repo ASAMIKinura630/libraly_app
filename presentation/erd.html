@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DB(ERD) | 図書館保守システム</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="css/present-nav.css" />
+  <link rel="stylesheet" href="css/erd.css" />
+</head>
+<body>
+  <nav class="present-site-nav" aria-label="プレゼンテーション">
+    <span class="present-site-nav__brand">図書館保守システム</span>
+    <a href="overview.html">概要</a>
+    <a href="index.html">画面説明</a>
+    <a href="erd.html" aria-current="page">DB(ERD)</a>
+  </nav>
+
+  <main class="erd-page">
+    <header class="erd-page__header">
+      <h1>DB(ERD) — エンティティ・リレーションシップ・ダイヤグラム</h1>
+      <p>図書館保守システムで使用する全7テーブル（＋認証）の相関図</p>
+    </header>
+
+    <div class="erd-canvas-wrap">
+      <svg viewBox="0 0 1040 720" role="img" aria-label="図書館保守システムのER図。7テーブルと外部認証の関係を示す">
+        <defs>
+          <marker id="erd-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#4a6fa5"/>
+          </marker>
+          <!-- 多側（クロウズフット） -->
+          <g id="crow-many">
+            <path d="M0,0 L0,10 M-5,10 L0,0 L5,10" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+          </g>
+        </defs>
+
+        <!-- ===== リレーションシップ線 ===== -->
+
+        <!-- category 1 —— N app -->
+        <path d="M230 95 L268 95" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+        <use href="#crow-many" transform="translate(268,90)"/>
+        <text x="248" y="86" font-size="10" fill="#64748b" text-anchor="middle">1 : N</text>
+        <text x="248" y="108" font-size="9" fill="#94a3b8" text-anchor="middle">SET NULL</text>
+
+        <!-- app 1 —— N lending -->
+        <path d="M390 195 L390 248 L368 248" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+        <text x="402" y="220" font-size="10" fill="#64748b">1</text>
+        <use href="#crow-many" transform="translate(360,243)"/>
+        <text x="378" y="262" font-size="9" fill="#94a3b8">RESTRICT</text>
+
+        <!-- faculty 1 —— N department -->
+        <path d="M230 355 L268 355" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+        <use href="#crow-many" transform="translate(268,350)"/>
+        <text x="248" y="346" font-size="10" fill="#64748b" text-anchor="middle">1 : N</text>
+
+        <!-- department 1 —— N student -->
+        <path d="M500 355 L538 355" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+        <use href="#crow-many" transform="translate(538,350)"/>
+        <text x="518" y="346" font-size="10" fill="#64748b" text-anchor="middle">1 : N</text>
+
+        <!-- student 1 —— N lending -->
+        <path d="M650 430 L650 500 L520 500" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+        <text x="662" y="465" font-size="10" fill="#64748b">1</text>
+        <use href="#crow-many" transform="translate(512,495)"/>
+        <text x="580" y="518" font-size="9" fill="#94a3b8">student_number</text>
+
+        <!-- staff 1 —— N lending (lent) -->
+        <path d="M780 155 L780 280 L620 280 L620 500" stroke="#2563eb" stroke-width="1.5" fill="none" stroke-dasharray="none"/>
+        <text x="700" y="272" font-size="9" fill="#2563eb">lent_by_staff_id</text>
+        <use href="#crow-many" transform="translate(612,495)"/>
+
+        <!-- staff 1 —— N lending (returned) -->
+        <path d="M900 155 L900 300 L680 300 L680 520" stroke="#1d4ed8" stroke-width="1.5" fill="none"/>
+        <text x="820" y="292" font-size="9" fill="#1d4ed8">returned_by_staff_id</text>
+        <use href="#crow-many" transform="translate(672,515)"/>
+
+        <!-- staff email — auth.users (論理） -->
+        <path d="M890 95 L960 95 L960 175" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,4" fill="none" marker-end="url(#erd-arrow)"/>
+        <text x="930" y="86" font-size="9" fill="#94a3b8" text-anchor="middle">email 一致</text>
+
+        <!-- ===== エンティティ: libraly_app_category ===== -->
+        <g id="ent-category">
+          <rect x="30" y="30" width="200" height="108" rx="4" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+          <rect x="30" y="30" width="200" height="28" rx="4" fill="#2563eb"/>
+          <rect x="30" y="50" width="200" height="8" fill="#2563eb"/>
+          <text x="130" y="49" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app_category</text>
+          <text x="130" y="62" text-anchor="middle" font-size="9" fill="#dbeafe">図書カテゴリマスタ</text>
+          <text x="40" y="82" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id           uuid</text>
+          <text x="40" y="98" font-size="10" fill="#1e293b">    name         text  UNIQUE</text>
+          <text x="40" y="114" font-size="10" fill="#64748b">    created_at   timestamptz</text>
+        </g>
+
+        <!-- ===== エンティティ: libraly_app ===== -->
+        <g id="ent-book">
+          <rect x="280" y="30" width="220" height="168" rx="4" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+          <rect x="280" y="30" width="220" height="28" rx="4" fill="#2563eb"/>
+          <rect x="280" y="50" width="220" height="8" fill="#2563eb"/>
+          <text x="390" y="49" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app</text>
+          <text x="390" y="62" text-anchor="middle" font-size="9" fill="#dbeafe">図書マスタ</text>
+          <text x="290" y="82" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id           uuid</text>
+          <text x="290" y="98" font-size="10" fill="#1e293b">    title        text</text>
+          <text x="290" y="114" font-size="10" fill="#1e293b">    content      text</text>
+          <text x="290" y="130" font-size="10" fill="#1e293b">    name         text  ※著者</text>
+          <text x="290" y="146" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  category_id  uuid  NULL可</text>
+          <text x="290" y="162" font-size="10" fill="#64748b">    created_at   timestamptz</text>
+        </g>
+
+        <!-- ===== エンティティ: libraly_app_staff ===== -->
+        <g id="ent-staff">
+          <rect x="780" y="30" width="220" height="128" rx="4" fill="#f8fbff" stroke="#2563eb" stroke-width="1.5"/>
+          <rect x="780" y="30" width="220" height="28" rx="4" fill="#2563eb"/>
+          <rect x="780" y="50" width="220" height="8" fill="#2563eb"/>
+          <text x="890" y="49" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app_staff</text>
+          <text x="890" y="62" text-anchor="middle" font-size="9" fill="#dbeafe">担当者マスタ</text>
+          <text x="790" y="82" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id            uuid</text>
+          <text x="790" y="98" font-size="10" fill="#1e293b">    staff_number  text  UNIQUE</text>
+          <text x="790" y="114" font-size="10" fill="#1e293b">    name          text</text>
+          <text x="790" y="130" font-size="10" fill="#1e293b">    email         text  UNIQUE</text>
+          <text x="790" y="146" font-size="10" fill="#64748b">    created_at    timestamptz</text>
+        </g>
+
+        <!-- ===== エンティティ: auth.users（外部・論理） ===== -->
+        <g id="ent-auth">
+          <rect x="880" y="175" width="140" height="72" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6,4"/>
+          <rect x="880" y="175" width="140" height="24" rx="4" fill="#64748b"/>
+          <text x="950" y="192" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">auth.users</text>
+          <text x="890" y="214" font-size="9" fill="#475569">Supabase Auth</text>
+          <text x="890" y="230" font-size="9" fill="#64748b">email（論理紐づけ）</text>
+        </g>
+
+        <!-- ===== エンティティ: libraly_app_faculty ===== -->
+        <g id="ent-faculty">
+          <rect x="30" y="310" width="200" height="108" rx="4" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+          <rect x="30" y="310" width="200" height="28" rx="4" fill="#4a6fa5"/>
+          <rect x="30" y="330" width="200" height="8" fill="#4a6fa5"/>
+          <text x="130" y="329" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app_faculty</text>
+          <text x="130" y="342" text-anchor="middle" font-size="9" fill="#e8f0fa">学部マスタ（親）</text>
+          <text x="40" y="362" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id           uuid</text>
+          <text x="40" y="378" font-size="10" fill="#1e293b">    name         text  UNIQUE</text>
+          <text x="40" y="394" font-size="10" fill="#64748b">    created_at   timestamptz</text>
+        </g>
+
+        <!-- ===== エンティティ: libraly_app_department ===== -->
+        <g id="ent-department">
+          <rect x="280" y="310" width="220" height="128" rx="4" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+          <rect x="280" y="310" width="220" height="28" rx="4" fill="#4a6fa5"/>
+          <rect x="280" y="330" width="220" height="8" fill="#4a6fa5"/>
+          <text x="390" y="329" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app_department</text>
+          <text x="390" y="342" text-anchor="middle" font-size="9" fill="#e8f0fa">学科マスタ（子）</text>
+          <text x="290" y="362" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id           uuid</text>
+          <text x="290" y="378" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  faculty_id   uuid</text>
+          <text x="290" y="394" font-size="10" fill="#1e293b">    name         text</text>
+          <text x="290" y="410" font-size="9" fill="#64748b">    UNIQUE(faculty_id, name)</text>
+          <text x="290" y="426" font-size="10" fill="#64748b">    created_at   timestamptz</text>
+        </g>
+
+        <!-- ===== エンティティ: libraly_app_student ===== -->
+        <g id="ent-student">
+          <rect x="550" y="310" width="220" height="148" rx="4" fill="#f8fbff" stroke="#c5d4e8" stroke-width="1.5"/>
+          <rect x="550" y="310" width="220" height="28" rx="4" fill="#4a6fa5"/>
+          <rect x="550" y="330" width="220" height="8" fill="#4a6fa5"/>
+          <text x="660" y="329" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app_student</text>
+          <text x="660" y="342" text-anchor="middle" font-size="9" fill="#e8f0fa">学生マスタ</text>
+          <text x="560" y="362" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id              uuid</text>
+          <text x="560" y="378" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#047857">UQ</tspan>  student_number  text</text>
+          <text x="560" y="394" font-size="10" fill="#1e293b">    name            text</text>
+          <text x="560" y="410" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  department_id   uuid</text>
+          <text x="560" y="426" font-size="10" fill="#1e293b">    birth_date      text  YYYYMMDD</text>
+          <text x="560" y="442" font-size="10" fill="#64748b">    created_at      timestamptz</text>
+        </g>
+
+        <!-- ===== エンティティ: libraly_app_lending_history ===== -->
+        <g id="ent-lending">
+          <rect x="280" y="500" width="280" height="200" rx="4" fill="#f8fbff" stroke="#2563eb" stroke-width="2"/>
+          <rect x="280" y="500" width="280" height="28" rx="4" fill="#2563eb"/>
+          <rect x="280" y="520" width="280" height="8" fill="#2563eb"/>
+          <text x="420" y="519" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">libraly_app_lending_history</text>
+          <text x="420" y="532" text-anchor="middle" font-size="9" fill="#dbeafe">図書貸し出し履歴</text>
+          <text x="290" y="552" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan>  id                    uuid</text>
+          <text x="290" y="568" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  book_id               uuid</text>
+          <text x="290" y="584" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  student_number        text</text>
+          <text x="290" y="600" font-size="10" fill="#1e293b">    is_returned           boolean</text>
+          <text x="290" y="616" font-size="10" fill="#1e293b">    due_date              date</text>
+          <text x="290" y="632" font-size="10" fill="#1e293b">    returned_at           timestamptz NULL</text>
+          <text x="290" y="648" font-size="10" fill="#1e293b">    created_at            timestamptz ※貸出日時</text>
+          <text x="290" y="664" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  lent_by_staff_id      uuid NULL</text>
+          <text x="290" y="680" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan>  returned_by_staff_id  uuid NULL</text>
+        </g>
+
+        <!-- 凡例（図内） -->
+        <g id="erd-inline-legend" transform="translate(30, 580)">
+          <rect x="0" y="0" width="200" height="118" rx="6" fill="#fff" stroke="#c5d4e8" stroke-width="1"/>
+          <text x="100" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">凡例</text>
+          <text x="12" y="40" font-size="9" fill="#b45309" font-weight="700">PK</text>
+          <text x="32" y="40" font-size="9" fill="#64748b">= 主キー</text>
+          <text x="12" y="56" font-size="9" fill="#1d4ed8" font-weight="700">FK</text>
+          <text x="32" y="56" font-size="9" fill="#64748b">= 外部キー</text>
+          <text x="12" y="72" font-size="9" fill="#047857" font-weight="700">UQ</text>
+          <text x="32" y="72" font-size="9" fill="#64748b">= 一意制約</text>
+          <line x1="12" y1="88" x2="42" y2="88" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <text x="48" y="92" font-size="9" fill="#64748b">= 論理参照（DB外部）</text>
+          <path d="M12 104 L12 114 M7 114 L12 104 L17 114" stroke="#4a6fa5" stroke-width="1.5" fill="none"/>
+          <text x="24" y="112" font-size="9" fill="#64748b">= 1対多（多側）</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="erd-legend">
+      <section class="erd-legend__card">
+        <h2>テーブル一覧（全7）</h2>
+        <ul class="erd-table-list">
+          <li><code>libraly_app_category</code> — 図書カテゴリマスタ</li>
+          <li><code>libraly_app</code> — 図書マスタ</li>
+          <li><code>libraly_app_faculty</code> — 学部マスタ</li>
+          <li><code>libraly_app_department</code> — 学科マスタ</li>
+          <li><code>libraly_app_student</code> — 学生マスタ</li>
+          <li><code>libraly_app_staff</code> — 担当者マスタ</li>
+          <li><code>libraly_app_lending_history</code> — 図書貸し出し履歴</li>
+        </ul>
+      </section>
+      <section class="erd-legend__card">
+        <h2>主なリレーション</h2>
+        <ul>
+          <li>カテゴリ → 図書（1:N、削除時 <code>SET NULL</code>）</li>
+          <li>学部 → 学科 → 学生（1:N、<code>RESTRICT</code>）</li>
+          <li>図書・学生 → 貸出履歴（1:N、<code>RESTRICT</code>）</li>
+          <li>担当者 → 貸出履歴（貸出・返却処理者、<code>RESTRICT</code>）</li>
+          <li><code>auth.users</code> ↔ 担当者（<code>email</code> 一致、論理紐づけ）</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

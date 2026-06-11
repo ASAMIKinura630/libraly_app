@@ -1,0 +1,51 @@
+/* プレゼンテーション — サイト上部ナビ（概要 / 画面説明 / DB(ERD)） */
+
+.present-site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.present-site-nav__brand {
+  margin-right: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.present-site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.present-site-nav a:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.present-site-nav a[aria-current="page"] {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  pointer-events: none;
+}
