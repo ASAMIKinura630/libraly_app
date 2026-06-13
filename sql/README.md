@@ -47,6 +47,18 @@ node scripts/insert_lending_history_testdata_50.js
 |------|----------|------|
 | 1 | `20260525_08_reset_and_insert_book_test_data.sql` | 図書全削除 + **実在書籍ベース** 50 件（**貸出履歴も削除**） |
 
+## 図書追加（実在書 100 冊）
+
+| ファイル | 内容 |
+|----------|------|
+| `scripts/insert_books_100.js` | 1920年代〜2020年代の実在書籍 100 冊を Supabase に追加（既存タイトルはスキップ） |
+
+```bash
+node scripts/insert_books_100.js
+```
+
+**前提:** カテゴリマスタ（小説・ビジネス・技術書・歴史・人文・児童書）が投入済みであること。08 実行後に実行すると合計 150 冊になる。
+
 ## よくあるエラー
 
 ### `column "faculty" does not exist`

@@ -215,6 +215,71 @@
       text-align: center;
     }
 
+    /* データ入力ルール */
+    .rules-section {
+      margin-bottom: 2rem;
+    }
+
+    .rules-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .rules-list {
+      display: grid;
+      gap: 0.75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    @media (min-width: 640px) {
+      .rules-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .rules-list li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.85rem;
+      align-items: start;
+      padding: 1rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .rules-list__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      font-size: 1.2rem;
+      background: var(--panel-alt);
+      border-radius: 10px;
+    }
+
+    .rules-list__body h3 {
+      margin: 0 0 0.25rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .rules-list__body p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
     .flow-grid {
       display: grid;
       gap: 1.25rem;
@@ -372,6 +437,41 @@
         </div>
       </li>
     </ol>
+
+    <!-- データ入力ルール -->
+    <section class="rules-section" aria-labelledby="rules-heading">
+      <h2 id="rules-heading">データ入力ルール</h2>
+      <ul class="rules-list">
+        <li>
+          <span class="rules-list__icon" aria-hidden="true">📚</span>
+          <div class="rules-list__body">
+            <h3>図書はカテゴリマスタを参照</h3>
+            <p>図書の登録・編集では、図書カテゴリマスタからドロップダウンで選択します（未設定も可）。自由入力のテキストでは分類しません。</p>
+          </div>
+        </li>
+        <li>
+          <span class="rules-list__icon" aria-hidden="true">🎓</span>
+          <div class="rules-list__body">
+            <h3>学生は学部・学科マスタを参照</h3>
+            <p>学生の登録・編集では、学部を選んでから学科を選びます。学部・学科名の直接入力は行いません。</p>
+          </div>
+        </li>
+        <li>
+          <span class="rules-list__icon" aria-hidden="true">📅</span>
+          <div class="rules-list__body">
+            <h3>返却予定日は自動設定</h3>
+            <p>貸出登録時、貸し出し日は当日、返却予定日は<strong>貸し出し日の14日後</strong>をシステムが自動で設定します。</p>
+          </div>
+        </li>
+        <li>
+          <span class="rules-list__icon" aria-hidden="true">📕</span>
+          <div class="rules-list__body">
+            <h3>同時貸出は5冊まで</h3>
+            <p>1人の学生が<strong>同時に</strong>借りられる図書は<strong>5冊まで</strong>です（返却済みはカウントしません）。6冊目の貸出はできません。</p>
+          </div>
+        </li>
+      </ul>
+    </section>
 
     <!-- 認証・担当者の図 -->
     <section class="flow-section" aria-labelledby="flow-heading">
