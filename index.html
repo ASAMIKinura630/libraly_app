@@ -577,7 +577,6 @@
                 </select>
               </div>
             </div>
-            <span class="form-hint">1人の学生が同時に借りられる図書は5冊まで</span>
           </section>
         </div>
         <div class="form-actions">
@@ -642,7 +641,6 @@
     const FACULTY_TABLE = "libraly_app_faculty";
     const DEPARTMENT_TABLE = "libraly_app_department";
     const MESSAGE_HIDE_MS = 4000;
-    const MAX_ACTIVE_LOANS_PER_STUDENT = 5;
 
     let messageTimer = null;
     let isBusy = false;
@@ -785,16 +783,6 @@
         if (!h.is_returned) ids[h.book_id] = true;
       });
       return ids;
-    }
-
-    function countActiveLoansForStudent(studentNumber) {
-      let count = 0;
-      historyCache.forEach(function (h) {
-        if (!h.is_returned && h.student_number === studentNumber) {
-          count += 1;
-        }
-      });
-      return count;
     }
 
     function getBookCategoryName(book) {
@@ -1263,14 +1251,6 @@
       if (activeIds[bookId]) {
         showMessage("この図書はすでに貸出中です。先に返却してください。", "warn");
         populateBookSelect();
-        return;
-      }
-
-      if (countActiveLoansForStudent(studentNumber) >= MAX_ACTIVE_LOANS_PER_STUDENT) {
-        showMessage(
-          "この学生はすでに5冊貸出中です。返却してから再度貸出してください。",
-          "error"
-        );
         return;
       }
 
