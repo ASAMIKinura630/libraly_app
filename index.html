@@ -374,6 +374,11 @@
       color: var(--success-text);
     }
 
+    .badge--overdue {
+      background: #ffebee;
+      color: #c62828;
+    }
+
     .empty-state,
     .loading {
       text-align: center;
@@ -595,6 +600,7 @@
           <select id="status-filter" aria-label="返却状態で絞り込み">
             <option value="">すべて</option>
             <option value="lending" selected>貸出中のみ</option>
+            <option value="overdue">延滞のみ</option>
             <option value="returned">返却済みのみ</option>
           </select>
         </div>
@@ -777,6 +783,12 @@
     /** 返却処理用: 返却日=当日 */
     function getReturnDateValue() {
       return toDateInputValue(new Date()) + "T00:00:00";
+    }
+
+    /** 延滞判定: 未返却かつ返却予定日 < 今日（日付文字列 YYYY-MM-DD で比較） */
+    function isOverdue(record) {
+      if (!record || record.is_returned || !record.due_date) return false;
+      return record.due_date < toDateInputValue(new Date());
     }
 
     function getActiveLoanBookIds() {
@@ -1044,6 +1056,10 @@
         list = list.filter(function (h) {
           return !h.is_returned;
         });
+      } else if (statusFilter === "overdue") {
+        list = list.filter(function (h) {
+          return isOverdue(h);
+        });
       } else if (statusFilter === "returned") {
         list = list.filter(function (h) {
           return h.is_returned;
@@ -1090,7 +1106,9 @@
           .map(function (h) {
             const statusBadge = h.is_returned
               ? '<span class="badge badge--returned">返却済み</span>'
-              : '<span class="badge badge--lending">貸出中</span>';
+              : isOverdue(h)
+                ? '<span class="badge badge--overdue">延滞</span>'
+                : '<span class="badge badge--lending">貸出中</span>';
             const actionCell = h.is_returned
               ? "—"
               : '<button type="button" class="btn btn-return" data-action="return">返却</button>';
