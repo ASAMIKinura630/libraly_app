@@ -23,6 +23,18 @@
 | 2 | `20260601_add_lending_return_dates.sql` | 返却予定日・返却日カラム追加（06 実行済み環境向け） |
 | 3 | `20260614_backfill_lending_due_date.sql` | **返却予定日未設定**の既存履歴を `created_at + 14日` で補完（再実行可） |
 
+## テストデータ（貸し出し履歴 50 件）
+
+| ファイル | 内容 |
+|----------|------|
+| `scripts/insert_lending_history_testdata_50.js` | マスタ参照で履歴 50 件を Supabase に投入（上限5冊×3人・返却予定日超過10件・返却済み25件） |
+
+```bash
+node scripts/insert_lending_history_testdata_50.js
+```
+
+**前提:** 図書・学生・担当者マスタが投入済みであること。同一図書の貸出中重複を避けるため、空いている図書が 25 冊以上必要。
+
 ## 図書カテゴリマスタ（画面 CRUD）
 
 | 順番 | ファイル | 内容 |
