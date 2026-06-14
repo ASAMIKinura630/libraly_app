@@ -316,6 +316,20 @@
       margin-top: 1rem;
     }
 
+    .list-toolbar__actions {
+      flex-shrink: 0;
+    }
+
+    .btn-secondary {
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--border);
+    }
+
     .search-panels {
       margin-top: 0.75rem;
       margin-bottom: 0;
@@ -604,6 +618,9 @@
             <option value="returned">返却済みのみ</option>
           </select>
         </div>
+        <div class="list-toolbar__actions">
+          <button type="button" id="export-overdue-csv-btn" class="btn btn-secondary">延滞リスト(CSV)</button>
+        </div>
       </div>
 
       <div class="search-panels">
@@ -682,6 +699,7 @@
     const searchStudentNameInput = document.getElementById("search-student-name");
     const listCountEl = document.getElementById("list-count");
     const historyListEl = document.getElementById("history-list");
+    const exportOverdueCsvBtn = document.getElementById("export-overdue-csv-btn");
 
     function escapeHtml(str) {
       if (str == null) return "";
@@ -1049,6 +1067,67 @@
       searchStudentName = searchStudentNameInput.value.trim();
     }
 
+    function escapeCsvField(value) {
+      if (value == null) return "";
+      const s = String(value);
+      if (/[",\r\n]/.test(s)) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    function getOverdueRecords() {
+      return historyCache.filter(isOverdue);
+    }
+
+    function exportOverdueCsv() {
+      const rows = getOverdueRecords();
+      if (rows.length === 0) {
+        showMessage("延滞中の履歴がありません。CSVは出力されませんでした。", "warn");
+        return;
+      }
+
+      const header = [
+        "状態",
+        "図書",
+        "著者",
+        "学籍番号",
+        "氏名",
+        "貸し出し日",
+        "返却予定日",
+        "貸出処理者",
+      ];
+      const lines = [header.map(escapeCsvField).join(",")];
+
+      rows.forEach(function (h) {
+        lines.push(
+          [
+            "延滞",
+            getBookTitle(h),
+            getBookAuthor(h),
+            h.student_number,
+            getStudentName(h),
+            formatDateOnly(h.created_at),
+            formatDateOnly(h.due_date),
+            getProcessorName(h.lent_staff),
+          ]
+            .map(escapeCsvField)
+            .join(",")
+        );
+      });
+
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "延滞リスト_" + toDateInputValue(new Date()) + ".csv";
+      link.click();
+      URL.revokeObjectURL(url);
+      showMessage("延滞リストを CSV で出力しました（" + rows.length + " 件）。", "success");
+    }
+
     function getFilteredHistory() {
       let list = historyCache.slice();
 
@@ -1395,6 +1474,8 @@
       statusFilter = statusFilterEl.value;
       renderHistoryList();
     });
+
+    exportOverdueCsvBtn.addEventListener("click", exportOverdueCsv);
 
     searchBookTitleInput.addEventListener("input", onSearchInputChange);
     searchBookAuthorInput.addEventListener("input", onSearchInputChange);
