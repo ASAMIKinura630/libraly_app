@@ -430,7 +430,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 1.25rem 1.35rem;
-      max-width: 420px;
+      max-width: 520px;
       width: 100%;
       box-shadow: var(--shadow);
     }
@@ -444,6 +444,18 @@
       font-size: 0.9rem;
       color: var(--text-muted, #666);
       margin: 0 0 1rem;
+    }
+
+    .sub-lend-dialog__filters {
+      display: grid;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    @media (min-width: 480px) {
+      .sub-lend-dialog__filters {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     .sub-lend-dialog textarea {
@@ -825,6 +837,20 @@
       <div class="sub-lend-dialog__panel">
         <h3 id="sub-lend-dialog-title">また貸しを記録</h3>
         <p id="sub-lend-dialog-desc" class="sub-lend-dialog__desc"></p>
+        <div class="sub-lend-dialog__filters">
+          <div class="form-group">
+            <label for="sub-lend-faculty-filter">学部</label>
+            <select id="sub-lend-faculty-filter" aria-label="学部で絞り込み">
+              <option value="">すべて</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sub-lend-department-filter">学科</label>
+            <select id="sub-lend-department-filter" aria-label="学科で絞り込み" disabled>
+              <option value="">すべて</option>
+            </select>
+          </div>
+        </div>
         <div class="form-group">
           <label for="sub-lend-holder">実際の保持者 <span aria-hidden="true">*</span></label>
           <select id="sub-lend-holder" required>
@@ -873,6 +899,9 @@
     let lendDepartmentFilter = "";
     let currentStaff = null;
     let subLendTargetId = null;
+    let subLendOfficialStudentNumber = "";
+    let subLendFacultyFilter = "";
+    let subLendDepartmentFilter = "";
 
     const messageEl = document.getElementById("message");
     const operatorHintEl = document.getElementById("operator-hint");
@@ -901,6 +930,8 @@
     const exportSubLendCsvBtn = document.getElementById("export-sub-lend-csv-btn");
     const subLendDialogEl = document.getElementById("sub-lend-dialog");
     const subLendDialogDescEl = document.getElementById("sub-lend-dialog-desc");
+    const subLendFacultyFilterEl = document.getElementById("sub-lend-faculty-filter");
+    const subLendDepartmentFilterEl = document.getElementById("sub-lend-department-filter");
     const subLendHolderSelect = document.getElementById("sub-lend-holder");
     const subLendNoteInput = document.getElementById("sub-lend-note");
     const subLendCancelBtn = document.getElementById("sub-lend-cancel");
@@ -1499,15 +1530,90 @@
       }
     }
 
-    function populateSubLendHolderSelect(officialStudentNumber) {
+    function getStudentsForSubLendSelect() {
+      let list = studentsCache.filter(function (s) {
+        return s.student_number !== subLendOfficialStudentNumber;
+      });
+      if (subLendDepartmentFilter) {
+        list = list.filter(function (s) {
+          return getStudentDepartmentId(s) === subLendDepartmentFilter;
+        });
+      } else if (subLendFacultyFilter) {
+        list = list.filter(function (s) {
+          return getStudentFacultyId(s) === subLendFacultyFilter;
+        });
+      }
+      return list;
+    }
+
+    function populateSubLendFacultyFilter() {
+      const current = subLendFacultyFilterEl.value;
+      subLendFacultyFilterEl.innerHTML = '<option value="">すべて</option>';
+      facultiesCache.forEach(function (f) {
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = f.name;
+        subLendFacultyFilterEl.appendChild(opt);
+      });
+      if (
+        current &&
+        subLendFacultyFilterEl.querySelector('option[value="' + current + '"]')
+      ) {
+        subLendFacultyFilterEl.value = current;
+      } else {
+        subLendFacultyFilterEl.value = "";
+      }
+      subLendFacultyFilter = subLendFacultyFilterEl.value;
+    }
+
+    function populateSubLendDepartmentFilter() {
+      const current = subLendDepartmentFilterEl.value;
+      subLendDepartmentFilterEl.innerHTML = '<option value="">すべて</option>';
+
+      if (!subLendFacultyFilter) {
+        subLendDepartmentFilterEl.disabled = true;
+        subLendDepartmentFilterEl.value = "";
+        subLendDepartmentFilter = "";
+        return;
+      }
+
+      subLendDepartmentFilterEl.disabled = false;
+      departmentsCache
+        .filter(function (d) {
+          return d.faculty_id === subLendFacultyFilter;
+        })
+        .forEach(function (d) {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.name;
+          subLendDepartmentFilterEl.appendChild(opt);
+        });
+
+      if (
+        current &&
+        subLendDepartmentFilterEl.querySelector('option[value="' + current + '"]')
+      ) {
+        subLendDepartmentFilterEl.value = current;
+      } else {
+        subLendDepartmentFilterEl.value = "";
+      }
+      subLendDepartmentFilter = subLendDepartmentFilterEl.value;
+    }
+
+    function populateSubLendHolderSelect() {
+      const current = subLendHolderSelect.value;
       subLendHolderSelect.innerHTML = '<option value="">選択してください</option>';
-      studentsCache.forEach(function (s) {
-        if (s.student_number === officialStudentNumber) return;
+      getStudentsForSubLendSelect().forEach(function (s) {
         const opt = document.createElement("option");
         opt.value = s.student_number;
-        opt.textContent = s.student_number + " — " + s.name;
+        opt.textContent = formatStudentSelectLabel(s);
         subLendHolderSelect.appendChild(opt);
       });
+      if (current && subLendHolderSelect.querySelector('option[value="' + current + '"]')) {
+        subLendHolderSelect.value = current;
+      } else {
+        subLendHolderSelect.value = "";
+      }
     }
 
     function openSubLendDialog(historyId) {
@@ -1517,6 +1623,9 @@
       if (!record || record.is_returned || record.is_sub_lend) return;
 
       subLendTargetId = historyId;
+      subLendOfficialStudentNumber = record.student_number;
+      subLendFacultyFilter = "";
+      subLendDepartmentFilter = "";
       subLendNoteInput.value = "";
       subLendDialogDescEl.textContent =
         "「" +
@@ -1524,16 +1633,26 @@
         "」（公式借り手: " +
         getStudentName(record) +
         "）の実際の保持者を記録します。公式借り手は変更されません。";
-      populateSubLendHolderSelect(record.student_number);
+      populateSubLendFacultyFilter();
+      populateSubLendDepartmentFilter();
+      populateSubLendHolderSelect();
       subLendDialogEl.classList.remove("is-hidden");
       subLendDialogEl.hidden = false;
-      subLendHolderSelect.focus();
+      subLendFacultyFilterEl.focus();
     }
 
     function closeSubLendDialog() {
       subLendTargetId = null;
+      subLendOfficialStudentNumber = "";
+      subLendFacultyFilter = "";
+      subLendDepartmentFilter = "";
       subLendDialogEl.classList.add("is-hidden");
       subLendDialogEl.hidden = true;
+      subLendFacultyFilterEl.innerHTML = '<option value="">すべて</option>';
+      subLendFacultyFilterEl.value = "";
+      subLendDepartmentFilterEl.innerHTML = '<option value="">すべて</option>';
+      subLendDepartmentFilterEl.value = "";
+      subLendDepartmentFilterEl.disabled = true;
       subLendHolderSelect.innerHTML = '<option value="">選択してください</option>';
       subLendNoteInput.value = "";
     }
@@ -2043,6 +2162,15 @@
     summarySubLendCsvBtn.addEventListener("click", exportSubLendCsv);
     subLendCancelBtn.addEventListener("click", closeSubLendDialog);
     subLendSubmitBtn.addEventListener("click", recordSubLend);
+    subLendFacultyFilterEl.addEventListener("change", function () {
+      subLendFacultyFilter = subLendFacultyFilterEl.value;
+      populateSubLendDepartmentFilter();
+      populateSubLendHolderSelect();
+    });
+    subLendDepartmentFilterEl.addEventListener("change", function () {
+      subLendDepartmentFilter = subLendDepartmentFilterEl.value;
+      populateSubLendHolderSelect();
+    });
     subLendDialogEl.addEventListener("click", function (e) {
       if (e.target === subLendDialogEl) closeSubLendDialog();
     });
