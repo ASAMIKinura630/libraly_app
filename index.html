@@ -393,6 +393,73 @@
       color: #c62828;
     }
 
+    .badge--due-soon {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .loan-summary {
+      margin-bottom: 1rem;
+      padding: 1rem 1.15rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .loan-summary__title {
+      margin: 0 0 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .loan-summary__grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .loan-summary__item {
+      padding: 0.75rem 0.85rem;
+      background: var(--panel-alt);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .loan-summary__label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .loan-summary__value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .loan-summary__actions {
+      margin-top: 0.35rem;
+    }
+
+    .loan-summary__link {
+      padding: 0;
+      font-size: 0.82rem;
+      font-family: inherit;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .loan-summary__link:hover {
+      color: var(--accent-hover);
+    }
+
     .empty-state,
     .loading {
       text-align: center;
@@ -546,6 +613,30 @@
 
     <div id="message" class="message" role="status" aria-live="polite"></div>
 
+    <section class="loan-summary" aria-labelledby="summary-heading">
+      <h2 id="summary-heading" class="loan-summary__title">貸出状況サマリー</h2>
+      <div class="loan-summary__grid">
+        <div class="loan-summary__item">
+          <span class="loan-summary__label">貸出中</span>
+          <span class="loan-summary__value" id="summary-active-count">—</span>
+        </div>
+        <div class="loan-summary__item">
+          <span class="loan-summary__label">延滞</span>
+          <span class="loan-summary__value" id="summary-overdue-count">—</span>
+          <div class="loan-summary__actions">
+            <button type="button" id="summary-overdue-csv-btn" class="loan-summary__link">延滞リスト(CSV)</button>
+          </div>
+        </div>
+        <div class="loan-summary__item">
+          <span class="loan-summary__label">返却予定が近い（3日以内）</span>
+          <span class="loan-summary__value" id="summary-due-soon-count">—</span>
+          <div class="loan-summary__actions">
+            <button type="button" id="summary-due-soon-csv-btn" class="loan-summary__link">返却予定リスト(CSV)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="card" aria-labelledby="lend-heading">
       <div class="card-header">
         <h2 id="lend-heading">貸出登録</h2>
@@ -614,11 +705,13 @@
           <select id="status-filter" aria-label="返却状態で絞り込み">
             <option value="">すべて</option>
             <option value="lending" selected>貸出中のみ</option>
+            <option value="due_soon">返却予定が近い</option>
             <option value="overdue">延滞のみ</option>
             <option value="returned">返却済みのみ</option>
           </select>
         </div>
         <div class="list-toolbar__actions">
+          <button type="button" id="export-due-soon-csv-btn" class="btn btn-secondary">返却予定リスト(CSV)</button>
           <button type="button" id="export-overdue-csv-btn" class="btn btn-secondary">延滞リスト(CSV)</button>
         </div>
       </div>
@@ -666,6 +759,7 @@
     const DEPARTMENT_TABLE = "libraly_app_department";
     const MESSAGE_HIDE_MS = 4000;
     const MAX_ACTIVE_LOANS_PER_STUDENT = 5;
+    const DUE_SOON_DAYS = 3;
 
     let messageTimer = null;
     let isBusy = false;
@@ -700,6 +794,12 @@
     const listCountEl = document.getElementById("list-count");
     const historyListEl = document.getElementById("history-list");
     const exportOverdueCsvBtn = document.getElementById("export-overdue-csv-btn");
+    const exportDueSoonCsvBtn = document.getElementById("export-due-soon-csv-btn");
+    const summaryActiveCountEl = document.getElementById("summary-active-count");
+    const summaryOverdueCountEl = document.getElementById("summary-overdue-count");
+    const summaryDueSoonCountEl = document.getElementById("summary-due-soon-count");
+    const summaryOverdueCsvBtn = document.getElementById("summary-overdue-csv-btn");
+    const summaryDueSoonCsvBtn = document.getElementById("summary-due-soon-csv-btn");
 
     function escapeHtml(str) {
       if (str == null) return "";
@@ -807,6 +907,82 @@
     function isOverdue(record) {
       if (!record || record.is_returned || !record.due_date) return false;
       return record.due_date < toDateInputValue(new Date());
+    }
+
+    /** 返却予定が近い: 未返却・未延滞・返却予定日が今日〜DUE_SOON_DAYS 日後 */
+    function isDueSoon(record) {
+      if (!record || record.is_returned || !record.due_date) return false;
+      if (isOverdue(record)) return false;
+      const today = toDateInputValue(new Date());
+      const limit = toDateInputValue(addDays(new Date(), DUE_SOON_DAYS));
+      return record.due_date >= today && record.due_date <= limit;
+    }
+
+    function getOverdueDays(record) {
+      if (!isOverdue(record) || !record.due_date) return null;
+      const today = toDateInputValue(new Date());
+      const due = new Date(record.due_date + "T00:00:00");
+      const now = new Date(today + "T00:00:00");
+      return Math.floor((now.getTime() - due.getTime()) / 86400000);
+    }
+
+    function getDaysUntilDue(record) {
+      if (record.is_returned || !record.due_date || isOverdue(record)) return null;
+      const today = toDateInputValue(new Date());
+      const due = new Date(record.due_date + "T00:00:00");
+      const now = new Date(today + "T00:00:00");
+      return Math.floor((due.getTime() - now.getTime()) / 86400000);
+    }
+
+    function formatDaysColumn(record) {
+      const overdueDays = getOverdueDays(record);
+      if (overdueDays != null) return "延滞 " + overdueDays + " 日";
+      const until = getDaysUntilDue(record);
+      if (until != null && isDueSoon(record)) return "残り " + until + " 日";
+      return "—";
+    }
+
+    function getActiveLendingRecords() {
+      return historyCache.filter(function (h) {
+        return !h.is_returned;
+      });
+    }
+
+    function getDueSoonRecords() {
+      return historyCache.filter(isDueSoon);
+    }
+
+    function updateLoanSummary() {
+      const active = getActiveLendingRecords().length;
+      const overdue = getOverdueRecords().length;
+      const dueSoon = getDueSoonRecords().length;
+      summaryActiveCountEl.textContent = String(active);
+      summaryOverdueCountEl.textContent = String(overdue);
+      summaryDueSoonCountEl.textContent = String(dueSoon);
+    }
+
+    function downloadCsvFile(filename, header, rows, emptyMessage) {
+      if (rows.length === 0) {
+        showMessage(emptyMessage, "warn");
+        return;
+      }
+      const lines = [header.map(escapeCsvField).join(",")];
+      rows.forEach(function (cells) {
+        lines.push(cells.map(escapeCsvField).join(","));
+      });
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function getOverdueRecords() {
+      return historyCache.filter(isOverdue);
     }
 
     function getActiveLoanBookIds() {
@@ -1076,33 +1252,26 @@
       return s;
     }
 
-    function getOverdueRecords() {
-      return historyCache.filter(isOverdue);
-    }
-
     function exportOverdueCsv() {
-      const rows = getOverdueRecords();
-      if (rows.length === 0) {
-        showMessage("延滞中の履歴がありません。CSVは出力されませんでした。", "warn");
-        return;
-      }
-
-      const header = [
-        "状態",
-        "図書",
-        "著者",
-        "学籍番号",
-        "氏名",
-        "貸し出し日",
-        "返却予定日",
-        "貸出処理者",
-      ];
-      const lines = [header.map(escapeCsvField).join(",")];
-
-      rows.forEach(function (h) {
-        lines.push(
-          [
+      const records = getOverdueRecords();
+      const today = toDateInputValue(new Date());
+      downloadCsvFile(
+        "延滞リスト_" + today + ".csv",
+        [
+          "状態",
+          "延滞日数",
+          "図書",
+          "著者",
+          "学籍番号",
+          "氏名",
+          "貸し出し日",
+          "返却予定日",
+          "貸出処理者",
+        ],
+        records.map(function (h) {
+          return [
             "延滞",
+            getOverdueDays(h),
             getBookTitle(h),
             getBookAuthor(h),
             h.student_number,
@@ -1110,22 +1279,52 @@
             formatDateOnly(h.created_at),
             formatDateOnly(h.due_date),
             getProcessorName(h.lent_staff),
-          ]
-            .map(escapeCsvField)
-            .join(",")
-        );
-      });
+          ];
+        }),
+        "延滞中の履歴がありません。CSVは出力されませんでした。"
+      );
+      if (records.length > 0) {
+        showMessage("延滞リストを CSV で出力しました（" + records.length + " 件）。", "success");
+      }
+    }
 
-      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
-        type: "text/csv;charset=utf-8",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "延滞リスト_" + toDateInputValue(new Date()) + ".csv";
-      link.click();
-      URL.revokeObjectURL(url);
-      showMessage("延滞リストを CSV で出力しました（" + rows.length + " 件）。", "success");
+    function exportDueSoonCsv() {
+      const records = getDueSoonRecords();
+      const today = toDateInputValue(new Date());
+      downloadCsvFile(
+        "返却予定リスト_" + today + ".csv",
+        [
+          "状態",
+          "残り日数",
+          "図書",
+          "著者",
+          "学籍番号",
+          "氏名",
+          "貸し出し日",
+          "返却予定日",
+          "貸出処理者",
+        ],
+        records.map(function (h) {
+          return [
+            "期限間近",
+            getDaysUntilDue(h),
+            getBookTitle(h),
+            getBookAuthor(h),
+            h.student_number,
+            getStudentName(h),
+            formatDateOnly(h.created_at),
+            formatDateOnly(h.due_date),
+            getProcessorName(h.lent_staff),
+          ];
+        }),
+        "返却予定が近い履歴がありません。CSVは出力されませんでした。"
+      );
+      if (records.length > 0) {
+        showMessage(
+          "返却予定リストを CSV で出力しました（" + records.length + " 件）。",
+          "success"
+        );
+      }
     }
 
     function getFilteredHistory() {
@@ -1135,6 +1334,8 @@
         list = list.filter(function (h) {
           return !h.is_returned;
         });
+      } else if (statusFilter === "due_soon") {
+        list = list.filter(isDueSoon);
       } else if (statusFilter === "overdue") {
         list = list.filter(function (h) {
           return isOverdue(h);
@@ -1159,6 +1360,8 @@
     }
 
     function renderHistoryList() {
+      updateLoanSummary();
+
       if (historyCache.length === 0) {
         listCountEl.textContent = "";
         historyListEl.innerHTML =
@@ -1179,7 +1382,7 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th><th>操作</th>" +
+        "<th>状態</th><th>日数</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th><th>操作</th>" +
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
@@ -1187,7 +1390,9 @@
               ? '<span class="badge badge--returned">返却済み</span>'
               : isOverdue(h)
                 ? '<span class="badge badge--overdue">延滞</span>'
-                : '<span class="badge badge--lending">貸出中</span>';
+                : isDueSoon(h)
+                  ? '<span class="badge badge--due-soon">期限間近</span>'
+                  : '<span class="badge badge--lending">貸出中</span>';
             const actionCell = h.is_returned
               ? "—"
               : '<button type="button" class="btn btn-return" data-action="return">返却</button>';
@@ -1198,6 +1403,9 @@
               "\">" +
               "<td>" +
               statusBadge +
+              "</td>" +
+              "<td>" +
+              escapeHtml(formatDaysColumn(h)) +
               "</td>" +
               "<td>" +
               escapeHtml(getBookTitle(h)) +
@@ -1327,6 +1535,7 @@
         historyCache = [];
         historyListEl.innerHTML = "";
         listCountEl.textContent = "";
+        updateLoanSummary();
         showMessage("貸し出し履歴の取得に失敗しました。テーブルが作成されているか確認してください。", "error");
         return false;
       }
@@ -1476,6 +1685,9 @@
     });
 
     exportOverdueCsvBtn.addEventListener("click", exportOverdueCsv);
+    exportDueSoonCsvBtn.addEventListener("click", exportDueSoonCsv);
+    summaryOverdueCsvBtn.addEventListener("click", exportOverdueCsv);
+    summaryDueSoonCsvBtn.addEventListener("click", exportDueSoonCsv);
 
     searchBookTitleInput.addEventListener("input", onSearchInputChange);
     searchBookAuthorInput.addEventListener("input", onSearchInputChange);
