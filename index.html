@@ -368,38 +368,73 @@
     }
 
     .history-table .col-status {
-      width: 8.5rem;
+      width: 4.75rem;
     }
 
-    .history-table .col-days {
-      width: 5.5rem;
+    .history-status-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem 1rem;
+      margin: 0 0 0.65rem;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
     }
 
-    .history-table .col-book {
-      width: 22%;
+    .history-status-legend__item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
     }
 
-    .history-table .col-student {
-      width: 18%;
-    }
-
-    .history-table .col-dates {
-      width: 9rem;
-    }
-
-    .history-table .col-staff {
-      width: 8rem;
-    }
-
-    .history-table .actions {
-      width: 7.5rem;
-    }
-
-    .status-badges {
+    .status-indicators {
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
+      gap: 0.35rem;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+
+    .status-dot--lending {
+      background: #1565c0;
+    }
+
+    .status-dot--sub-lend {
+      background: #4527a0;
+    }
+
+    .status-dot--due-soon {
+      background: #e65100;
+    }
+
+    .status-dot--overdue {
+      background: #c62828;
+    }
+
+    .status-dot--returned {
+      background: #2e7d32;
+    }
+
+    .status-overdue-label {
+      display: inline-flex;
+      align-items: center;
       gap: 0.25rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #c62828;
+      white-space: nowrap;
     }
 
     .history-cell-stack {
@@ -428,7 +463,28 @@
       color: var(--muted);
     }
 
+    .history-table .col-days {
+      width: 5.5rem;
+    }
+
+    .history-table .col-book {
+      width: 22%;
+    }
+
+    .history-table .col-student {
+      width: 18%;
+    }
+
+    .history-table .col-dates {
+      width: 9rem;
+    }
+
+    .history-table .col-staff {
+      width: 8rem;
+    }
+
     .history-table .actions {
+      width: 7.5rem;
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
@@ -442,42 +498,6 @@
 
     .history-table .actions .btn-sub-lend {
       margin-left: 0;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .badge--lending {
-      background: var(--warn-bg);
-      color: var(--warn-text);
-    }
-
-    .badge--returned {
-      background: var(--success-bg);
-      color: var(--success-text);
-    }
-
-    .badge--overdue {
-      background: #ffebee;
-      color: #c62828;
-    }
-
-    .badge--due-soon {
-      background: #fff3e0;
-      color: #e65100;
-    }
-
-    .badge--sub-lend {
-      background: #ede7f6;
-      color: #4527a0;
-    }
-
-    .btn-sub-lend {
       font-size: 0.85rem;
       padding: 0.25rem 0.55rem;
     }
@@ -1500,6 +1520,55 @@
       return getActualHolderName(record);
     }
 
+    function getHistoryStatusAriaLabel(record) {
+      if (record.is_returned) return "返却済み";
+      const parts = [];
+      if (isOverdue(record)) parts.push("延滞");
+      else if (isDueSoon(record)) parts.push("期限間近");
+      else parts.push("貸出中");
+      if (record.is_sub_lend) parts.push("また貸し");
+      return parts.join("、");
+    }
+
+    function renderHistoryStatusLegend() {
+      return (
+        '<div class="history-status-legend" aria-label="状態の凡例">' +
+        '<span class="history-status-legend__item">貸出中：<span class="status-dot status-dot--lending" aria-hidden="true"></span></span>' +
+        '<span class="history-status-legend__item">また貸し：<span class="status-dot status-dot--sub-lend" aria-hidden="true"></span></span>' +
+        '<span class="history-status-legend__item">期限間近：<span class="status-dot status-dot--due-soon" aria-hidden="true"></span></span>' +
+        '<span class="history-status-legend__item">延滞：<span class="status-overdue-label"><span class="status-dot status-dot--overdue" aria-hidden="true"></span>延滞</span></span>' +
+        '<span class="history-status-legend__item">返却済み：<span class="status-dot status-dot--returned" aria-hidden="true"></span></span>' +
+        "</div>"
+      );
+    }
+
+    function renderHistoryStatusIndicators(record) {
+      if (record.is_returned) {
+        return (
+          '<div class="status-indicators">' +
+          '<span class="status-dot status-dot--returned" aria-hidden="true"></span>' +
+          "</div>"
+        );
+      }
+
+      let html = '<div class="status-indicators">';
+      if (isOverdue(record)) {
+        html +=
+          '<span class="status-overdue-label">' +
+          '<span class="status-dot status-dot--overdue" aria-hidden="true"></span>延滞' +
+          "</span>";
+      } else if (isDueSoon(record)) {
+        html += '<span class="status-dot status-dot--due-soon" aria-hidden="true"></span>';
+      } else {
+        html += '<span class="status-dot status-dot--lending" aria-hidden="true"></span>';
+      }
+      if (record.is_sub_lend) {
+        html += '<span class="status-dot status-dot--sub-lend" aria-hidden="true"></span>';
+      }
+      html += "</div>";
+      return html;
+    }
+
     function matchesSearchField(value, query) {
       if (!query) return true;
       return String(value).toLowerCase().indexOf(query.toLowerCase()) !== -1;
@@ -1896,6 +1965,7 @@
       }
 
       historyListEl.innerHTML =
+        renderHistoryStatusLegend() +
         '<table class="history-table">' +
         "<thead><tr>" +
         '<th class="col-status">状態</th>' +
@@ -1909,17 +1979,6 @@
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
-            const statusBadge = h.is_returned
-              ? '<span class="badge badge--returned">返却済み</span>'
-              : isOverdue(h)
-                ? '<span class="badge badge--overdue">延滞</span>'
-                : isDueSoon(h)
-                  ? '<span class="badge badge--due-soon">期限間近</span>'
-                  : '<span class="badge badge--lending">貸出中</span>';
-            const subLendBadge =
-              h.is_sub_lend && !h.is_returned
-                ? '<span class="badge badge--sub-lend">また貸し</span>'
-                : "";
             let actionCell = "—";
             if (!h.is_returned) {
               actionCell =
@@ -1934,10 +1993,11 @@
               "<tr data-id=\"" +
               escapeHtml(h.id) +
               "\">" +
-              '<td class="col-status"><div class="status-badges">' +
-              statusBadge +
-              subLendBadge +
-              "</div></td>" +
+              '<td class="col-status" aria-label="' +
+              escapeHtml(getHistoryStatusAriaLabel(h)) +
+              '">' +
+              renderHistoryStatusIndicators(h) +
+              "</td>" +
               '<td class="col-days">' +
               escapeHtml(formatDaysColumn(h)) +
               "</td>" +
