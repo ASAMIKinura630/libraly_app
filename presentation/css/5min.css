@@ -1,0 +1,232 @@
+/* 5分プレゼン — 台本・進行表 */
+
+.present-5min {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 2.5rem;
+}
+
+.present-5min__hero {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.present-5min__badge {
+  display: inline-block;
+  margin-bottom: 0.65rem;
+  padding: 0.28rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
+  border-radius: 999px;
+}
+
+.present-5min__hero h1 {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.45rem, 4vw, 1.9rem);
+  font-weight: 700;
+}
+
+.present-5min__hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.present-5min__start {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 1.25rem 0 1.75rem;
+}
+
+.present-5min__start a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.present-5min__start .present-5min__start-primary {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.present-5min__start .present-5min__start-primary:hover {
+  filter: brightness(1.05);
+}
+
+.present-5min__meta-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .present-5min__meta-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.present-5min__meta-card {
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 0.88rem;
+}
+
+.present-5min__meta-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.present-5min__timeline {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  font-size: 0.88rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.present-5min__timeline th,
+.present-5min__timeline td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.present-5min__timeline th {
+  background: var(--panel-alt);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.present-5min__timeline tr:last-child td {
+  border-bottom: none;
+}
+
+.present-5min__time {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.present-5min__timeline a {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.present-5min__script h2 {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  color: var(--accent);
+}
+
+.present-5min__script-block {
+  margin-bottom: 1.35rem;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.present-5min__script-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.present-5min__script-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.present-5min__script-head span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.present-5min__script-block p {
+  margin: 0 0 0.55rem;
+  line-height: 1.75;
+  font-size: 0.95rem;
+}
+
+.present-5min__script-block p:last-child {
+  margin-bottom: 0;
+}
+
+.present-5min__script-block ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.present-5min__script-block li {
+  margin-bottom: 0.25rem;
+}
+
+.present-5min__tips {
+  margin-top: 1.75rem;
+  padding: 1rem 1.1rem;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+}
+
+.present-5min__tips h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.present-5min__tips ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.present-5min__tips li {
+  margin-bottom: 0.3rem;
+}
+
+@media print {
+  .present-site-nav,
+  .present-5min__start {
+    display: none;
+  }
+
+  .present-5min__script-block {
+    break-inside: avoid;
+  }
+}

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5分プレゼン | 図書館保守システム</title>
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="css/present-nav.css" />
+  <link rel="stylesheet" href="css/5min.css" />
+</head>
+<body>
+  <nav class="present-site-nav" aria-label="プレゼンテーション">
+    <span class="present-site-nav__brand">図書館保守システム</span>
+    <a href="overview.html">概要</a>
+    <a href="index.html">画面説明</a>
+    <a href="erd.html">DB(ERD)</a>
+    <a href="5min.html" aria-current="page">5分プレゼン</a>
+  </nav>
+
+  <main class="present-5min">
+    <header class="present-5min__hero">
+      <span class="present-5min__badge">所要時間 約5分</span>
+      <h1>図書館保守システム — 5分プレゼン</h1>
+      <p>現行実装（2026年6月時点）に基づく進行表と台本です。</p>
+    </header>
+
+    <div class="present-5min__start">
+      <a class="present-5min__start-primary" href="overview.html">0. 概要ページから開始</a>
+      <a href="slide-01-overview.html">1. スライドから開始</a>
+      <a href="script-5min.md">台本（Markdown）</a>
+    </div>
+
+    <div class="present-5min__meta-grid">
+      <div class="present-5min__meta-card">
+        <strong>対象</strong>
+        初めてシステムを見る職員・関係者
+      </div>
+      <div class="present-5min__meta-card">
+        <strong>本番デモ</strong>
+        <a href="https://asamikinura630.github.io/libraly_app/index.html">index.html</a>
+      </div>
+      <div class="present-5min__meta-card">
+        <strong>スライド数</strong>
+        8枚 ＋ 概要・ERD（任意）
+      </div>
+    </div>
+
+    <table class="present-5min__timeline">
+      <caption style="caption-side:top;text-align:left;font-weight:700;margin-bottom:0.5rem;color:var(--accent);">進行表</caption>
+      <thead>
+        <tr>
+          <th scope="col">時間</th>
+          <th scope="col">内容</th>
+          <th scope="col">資料</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="present-5min__time">0:00–0:30</td>
+          <td>オープニング — システムの目的と3ゾーン</td>
+          <td><a href="overview.html">概要</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">0:30–1:10</td>
+          <td>全体構成 — 業務・照会・マスタ保守</td>
+          <td><a href="slide-01-overview.html">スライド1</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">1:10–1:50</td>
+          <td>ログイン保護と担当者表示</td>
+          <td><a href="slide-02-login.html">2</a> → <a href="slide-03-common-header.html">3</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">1:50–3:20</td>
+          <td><strong>貸出・返却</strong> — 日常業務の中心（また貸し・CSV・5冊上限）</td>
+          <td><a href="slide-04-lending.html">スライド4</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">3:20–3:45</td>
+          <td>貸出履歴照会 — 閲覧専用ゾーン</td>
+          <td><a href="slide-05-inquiry.html">スライド5</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">3:45–4:20</td>
+          <td>マスタ保守 — 図書・学生・担当者</td>
+          <td><a href="slide-06-admin.html">6</a> → <a href="slide-07-staff.html">7</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">4:20–4:45</td>
+          <td>データ構造 — 7テーブル＋認証</td>
+          <td><a href="erd.html">DB(ERD)</a></td>
+        </tr>
+        <tr>
+          <td class="present-5min__time">4:45–5:00</td>
+          <td>まとめ — 運用の流れ</td>
+          <td><a href="slide-08-summary.html">スライド8</a></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section class="present-5min__script" aria-labelledby="script-heading">
+      <h2 id="script-heading">台本（読み上げ用）</h2>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>0. オープニング</h3>
+          <span>0:00 – 0:30</span>
+        </div>
+        <p>本日は、図書の貸出・返却とマスタ保守を行う「図書館保守システム」をご紹介します。ブラウザだけで動作し、スマートフォンでも使えます。データは Supabase 上の PostgreSQL に保存されます。</p>
+        <p>画面は大きく3つに分かれています。<strong>業務</strong>で日々の貸出・返却、<strong>照会</strong>で履歴の参照、<strong>マスタ保守</strong>で図書や学生の登録を行います。</p>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>1. 全体構成</h3>
+          <span>0:30 – 1:10</span>
+        </div>
+        <p>業務ゾーンのトップ画面が index.html です。ここが日常の起点になります。照会ゾーンは inquiry.html で、履歴を見るだけの読み取り専用です。マスタ保守は admin.html から、図書・学生・カテゴリ・学部学科・担当者へ進みます。</p>
+        <p>いずれの画面も、同じグローバルナビで切り替えられます。すべて Supabase の同じデータベースを参照します。</p>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>2–3. ログインと担当者</h3>
+          <span>1:10 – 1:50</span>
+        </div>
+        <p>未ログインでは業務も照会もマスタも利用できません。メールアドレスとパスワードでログイン、または新規登録します。パスワードは6文字以上です。</p>
+        <p>ログイン後は画面上部に「ログイン中: 氏名」が表示されます。これは担当者マスタと、ログインメールが一致する職員を紐づけた結果です。貸出・返却・また貸しを記録するとき、この担当者が自動で履歴に残ります。</p>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>4. 貸出・返却（メイン）</h3>
+          <span>1:50 – 3:20</span>
+        </div>
+        <p>日常業務の中心がこの画面です。図書と学生を選んで「貸出する」を押すと登録されます。貸し出し日は当日、返却予定日は14日後が自動設定されます。</p>
+        <p>1人の学生が<strong>同時に</strong>借りられるのは5冊までです。返却済みは数えません。公式借り手だけでなく、<strong>また貸しの実保持者</strong>として持っている冊数もカウントします。6冊目はエラーになります。</p>
+        <p>履歴一覧の上には、貸出中・延滞・返却予定が近い・また貸しの件数サマリーがあります。延滞リスト、返却予定リスト、また貸しリストはそれぞれ CSV でダウンロードできます。延滞判定は公式借り手基準です。</p>
+        <p>状態は表の上の凡例どおり、青●が貸出中、紫●がまた貸し、橙●が期限間近、赤●と「延滞」文字が延滞、緑●が返却済みです。列は2段表示で、図書と著者、氏名と実保持者をコンパクトに見られます。</p>
+        <p>貸出中の行には「返却」と「また貸し」ボタンが横並びで出ます。また貸しは、公式借り手Aとは別の学生Bが実際に本を持っているときに記録します。モーダルで学部・学科を絞り込み、実保持者と任意のメモを入力します。Aの学籍番号は変わりません。延滞の対象もAのままです。</p>
+        <ul>
+          <li>デモする場合：サマリー → 絞り込み → また貸しモーダル → CSV の順が分かりやすいです。</li>
+        </ul>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>5. 貸出履歴照会</h3>
+          <span>3:20 – 3:45</span>
+        </div>
+        <p>照会ゾーンは閲覧専用です。「照会モード」のバナーが出て、貸出・返却ボタンは表示されません。図書を起点に「誰が借りたか」、学生を起点に「何を借りたか」をたどれます。処理担当者や返却処理者もここでは確認できます。</p>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>6–7. マスタ保守</h3>
+          <span>3:45 – 4:20</span>
+        </div>
+        <p>マスタ保守ポータルから、図書・図書カテゴリ・学生・学部・学科・担当者を管理します。図書のカテゴリはマスタからドロップダウン選択、学生の学部・学科もマスタ参照です。自由入力では分類しません。</p>
+        <p>担当者マスタでは職員番号が自動採番されます。ログインに使うメールアドレスを登録しておくと、先ほどの処理担当者表示と貸出履歴への記録が機能します。参照中のデータは削除できないようガードされています。</p>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>DB(ERD)</h3>
+          <span>4:20 – 4:45</span>
+        </div>
+        <p>データは7テーブルと Supabase Auth です。青いヘッダーがマスタ、<strong>ティール色</strong>の「図書貸出履歴」がトランザクション表です。図書と学生（公式借り手）から履歴へ1対多でつながり、また貸し時は実保持者の学籍番号も別の外部キーで参照します。担当者は貸出・返却・また貸し記録の処理者として履歴に残ります。</p>
+      </article>
+
+      <article class="present-5min__script-block">
+        <div class="present-5min__script-head">
+          <h3>8. まとめ</h3>
+          <span>4:45 – 5:00</span>
+        </div>
+        <p>運用の流れは、①ログイン、②マスタで図書と学生を登録、③トップ画面で貸出・返却とまた貸しの記録、④照会で履歴確認、です。延滞や返却予定は CSV でリスト化できます。</p>
+        <p>以上が図書館保守システムの概要です。ご清聴ありがとうございました。</p>
+      </article>
+    </section>
+
+    <aside class="present-5min__tips">
+      <h2>プレゼン時のヒント</h2>
+      <ul>
+        <li>時間が押したらスライド7（担当者）と ERD を30秒ずつに短縮し、スライド4（貸出・返却）を優先してください。</li>
+        <li>ライブデモは <a href="https://asamikinura630.github.io/libraly_app/index.html">本番 URL</a> を別タブで開いておくとスムーズです。</li>
+        <li>台本の印刷版は <a href="script-5min.md">script-5min.md</a> をご利用ください。</li>
+      </ul>
+    </aside>
+  </main>
+</body>
+</html>
