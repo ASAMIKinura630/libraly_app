@@ -350,6 +350,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 0.9rem;
+      table-layout: fixed;
     }
 
     .history-table th,
@@ -357,17 +358,90 @@
       padding: 0.65rem 0.5rem;
       border-bottom: 1px solid var(--border);
       text-align: left;
-      vertical-align: middle;
+      vertical-align: top;
+      word-break: break-word;
     }
 
     .history-table th {
       font-weight: 600;
       background: var(--panel-alt);
-      white-space: nowrap;
+    }
+
+    .history-table .col-status {
+      width: 8.5rem;
+    }
+
+    .history-table .col-days {
+      width: 5.5rem;
+    }
+
+    .history-table .col-book {
+      width: 22%;
+    }
+
+    .history-table .col-student {
+      width: 18%;
+    }
+
+    .history-table .col-dates {
+      width: 9rem;
+    }
+
+    .history-table .col-staff {
+      width: 8rem;
     }
 
     .history-table .actions {
-      white-space: nowrap;
+      width: 7.5rem;
+    }
+
+    .status-badges {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .history-cell-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .history-cell-stack__row {
+      line-height: 1.35;
+    }
+
+    .history-cell-stack__row--sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .history-table__stack-head .history-cell-stack__label {
+      display: block;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .history-table__stack-head .history-cell-stack__label--sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .history-table .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      align-items: stretch;
+    }
+
+    .history-table .actions .btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .history-table .actions .btn-sub-lend {
+      margin-left: 0;
     }
 
     .badge {
@@ -401,11 +475,9 @@
     .badge--sub-lend {
       background: #ede7f6;
       color: #4527a0;
-      margin-left: 0.25rem;
     }
 
     .btn-sub-lend {
-      margin-left: 0.35rem;
       font-size: 0.85rem;
       padding: 0.25rem 0.55rem;
     }
@@ -1392,6 +1464,42 @@
       );
     }
 
+    function renderHistoryStackCell(primary, secondary, secondaryIsSub) {
+      const subClass = secondaryIsSub ? " history-cell-stack__row--sub" : "";
+      return (
+        '<div class="history-cell-stack">' +
+        '<div class="history-cell-stack__row">' +
+        escapeHtml(primary) +
+        "</div>" +
+        '<div class="history-cell-stack__row' +
+        subClass +
+        '">' +
+        escapeHtml(secondary) +
+        "</div></div>"
+      );
+    }
+
+    function renderHistoryStackHead(primaryLabel, secondaryLabel) {
+      return (
+        '<th class="history-table__stack-head">' +
+        '<span class="history-cell-stack__label">' +
+        escapeHtml(primaryLabel) +
+        "</span>" +
+        '<span class="history-cell-stack__label history-cell-stack__label--sub">' +
+        escapeHtml(secondaryLabel) +
+        "</span></th>"
+      );
+    }
+
+    function formatOfficialBorrowerLine(record) {
+      return getStudentName(record);
+    }
+
+    function formatActualHolderLine(record) {
+      if (!record.is_sub_lend || !record.actual_holder_student_number) return "—";
+      return getActualHolderName(record);
+    }
+
     function matchesSearchField(value, query) {
       if (!query) return true;
       return String(value).toLowerCase().indexOf(query.toLowerCase()) !== -1;
@@ -1790,7 +1898,14 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>日数</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>実保持者</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th><th>操作</th>" +
+        '<th class="col-status">状態</th>' +
+        '<th class="col-days">日数</th>' +
+        renderHistoryStackHead("図書", "著者") +
+        renderHistoryStackHead("氏名", "実保持者") +
+        renderHistoryStackHead("貸し出し日", "返却予定日") +
+        renderHistoryStackHead("返却日", "貸出処理者") +
+        '<th class="col-staff">返却処理者</th>' +
+        '<th class="actions">操作</th>' +
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
@@ -1819,41 +1934,38 @@
               "<tr data-id=\"" +
               escapeHtml(h.id) +
               "\">" +
-              "<td>" +
+              '<td class="col-status"><div class="status-badges">' +
               statusBadge +
               subLendBadge +
-              "</td>" +
-              "<td>" +
+              "</div></td>" +
+              '<td class="col-days">' +
               escapeHtml(formatDaysColumn(h)) +
               "</td>" +
-              "<td>" +
-              escapeHtml(getBookTitle(h)) +
+              '<td class="col-book">' +
+              renderHistoryStackCell(getBookTitle(h), getBookAuthor(h), true) +
               "</td>" +
-              "<td>" +
-              escapeHtml(getBookAuthor(h)) +
+              '<td class="col-student">' +
+              renderHistoryStackCell(
+                formatOfficialBorrowerLine(h),
+                formatActualHolderLine(h),
+                true
+              ) +
               "</td>" +
-              "<td>" +
-              escapeHtml(h.student_number) +
+              '<td class="col-dates">' +
+              renderHistoryStackCell(
+                formatDateOnly(h.created_at),
+                formatDateOnly(h.due_date),
+                true
+              ) +
               "</td>" +
-              "<td>" +
-              escapeHtml(getStudentName(h)) +
+              '<td class="col-dates">' +
+              renderHistoryStackCell(
+                h.is_returned ? formatDateOnly(h.returned_at) : "—",
+                getProcessorName(h.lent_staff),
+                true
+              ) +
               "</td>" +
-              "<td>" +
-              escapeHtml(getActualHolderDisplay(h)) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(formatDateOnly(h.created_at)) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(formatDateOnly(h.due_date)) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(h.is_returned ? formatDateOnly(h.returned_at) : "—") +
-              "</td>" +
-              "<td>" +
-              escapeHtml(getProcessorName(h.lent_staff)) +
-              "</td>" +
-              "<td>" +
+              '<td class="col-staff">' +
               escapeHtml(getProcessorName(h.returned_staff)) +
               "</td>" +
               '<td class="actions">' +
