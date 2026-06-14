@@ -1821,20 +1821,58 @@
     async function loadHistory() {
       historyListEl.innerHTML = '<p class="loading">読み込み中…</p>';
 
-      const { data, error } = await supabaseClient
+      const historySelectCore =
+        "id, book_id, student_number, is_returned, due_date, returned_at, created_at, " +
+        "lent_by_staff_id, returned_by_staff_id, " +
+        "libraly_app ( id, title, name ), " +
+        "libraly_app_student!libraly_app_lending_history_student_number_fkey ( student_number, name ), " +
+        "lent_staff:libraly_app_staff!libraly_app_lending_history_lent_by_staff_id_fkey ( name ), " +
+        "returned_staff:libraly_app_staff!libraly_app_lending_history_returned_by_staff_id_fkey ( name )";
+
+      const historySelectSubLend =
+        historySelectCore +
+        ", is_sub_lend, actual_holder_student_number, sub_lend_note, sub_lend_recorded_at, sub_lend_recorded_by_staff_id, " +
+        "sub_lend_staff:libraly_app_staff!libraly_app_lending_history_sub_lend_recorded_by_staff_id_fkey ( name )";
+
+      function normalizeHistoryRow(row) {
+        return Object.assign(
+          {
+            is_sub_lend: false,
+            actual_holder_student_number: null,
+            sub_lend_note: null,
+            sub_lend_recorded_at: null,
+            sub_lend_recorded_by_staff_id: null,
+            sub_lend_staff: null,
+          },
+          row
+        );
+      }
+
+      function isSubLendSchemaError(err) {
+        if (!err) return false;
+        const msg = err.message || "";
+        const code = err.code || "";
+        return (
+          code === "PGRST204" ||
+          msg.indexOf("is_sub_lend") !== -1 ||
+          msg.indexOf("actual_holder_student_number") !== -1 ||
+          msg.indexOf("sub_lend_") !== -1
+        );
+      }
+
+      let { data, error } = await supabaseClient
         .from(HISTORY_TABLE)
-        .select(
-          "id, book_id, student_number, is_returned, due_date, returned_at, created_at, " +
-            "lent_by_staff_id, returned_by_staff_id, " +
-            "is_sub_lend, actual_holder_student_number, sub_lend_note, sub_lend_recorded_at, sub_lend_recorded_by_staff_id, " +
-            "libraly_app ( id, title, name ), " +
-            "libraly_app_student!libraly_app_lending_history_student_number_fkey ( student_number, name ), " +
-            "actual_holder:libraly_app_student!libraly_app_lending_history_actual_holder_student_number_fkey ( student_number, name ), " +
-            "lent_staff:libraly_app_staff!lent_by_staff_id ( name ), " +
-            "returned_staff:libraly_app_staff!returned_by_staff_id ( name ), " +
-            "sub_lend_staff:libraly_app_staff!sub_lend_recorded_by_staff_id ( name )"
-        )
+        .select(historySelectSubLend)
         .order("created_at", { ascending: false });
+
+      if (error && isSubLendSchemaError(error)) {
+        console.warn("Sub-lend columns unavailable; retrying without them.", error);
+        ({ data, error } = await supabaseClient
+          .from(HISTORY_TABLE)
+          .select(historySelectCore)
+          .order("created_at", { ascending: false }));
+        data = (data || []).map(normalizeHistoryRow);
+      }
 
       if (error) {
         console.error(error);
@@ -1843,7 +1881,11 @@
         listCountEl.textContent = "";
         updateLoanSummary();
         showMessage(
-          "貸し出し履歴の取得に失敗しました。テーブルが作成されているか、また貸し用マイグレーション（sql/20260615_add_sub_lend_fields.sql）を実行済みか確認してください。",
+          "貸し出し履歴の取得に失敗しました: " +
+            (error.message || "不明なエラー") +
+            "（" +
+            (error.code || "—") +
+            "）。ブラウザをスーパーリロード（Ctrl+Shift+R）するか、Supabase で NOTIFY pgrst, 'reload schema'; を実行してください。",
           "error"
         );
         return false;

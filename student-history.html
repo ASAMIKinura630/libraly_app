@@ -435,8 +435,8 @@
         .select(
           "id, is_returned, due_date, returned_at, created_at, " +
             "libraly_app ( title, name ), " +
-            "lent_staff:libraly_app_staff!lent_by_staff_id ( name ), " +
-            "returned_staff:libraly_app_staff!returned_by_staff_id ( name )"
+            "lent_staff:libraly_app_staff!libraly_app_lending_history_lent_by_staff_id_fkey ( name ), " +
+            "returned_staff:libraly_app_staff!libraly_app_lending_history_returned_by_staff_id_fkey ( name )"
         )
         .eq("student_number", student.student_number)
         .order("created_at", { ascending: false });

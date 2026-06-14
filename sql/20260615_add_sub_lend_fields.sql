@@ -44,3 +44,6 @@ BEGIN
       );
   END IF;
 END $$;
+
+-- PostgREST（Supabase API）のスキーマキャッシュを再読み込み
+NOTIFY pgrst, 'reload schema';
