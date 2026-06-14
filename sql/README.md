@@ -22,6 +22,7 @@
 | 1 | `20260525_06_add_lending_history.sql` | 貸し出し履歴テーブル（図書・学生マスタ作成後） |
 | 2 | `20260601_add_lending_return_dates.sql` | 返却予定日・返却日カラム追加（06 実行済み環境向け） |
 | 3 | `20260614_backfill_lending_due_date.sql` | **返却予定日未設定**の既存履歴を `created_at + 14日` で補完（再実行可） |
+| 4 | `20260615_add_sub_lend_fields.sql` | また貸し用列（`is_sub_lend`・実保持者等）を追加 |
 
 ## テストデータ（貸し出し履歴 50 件）
 

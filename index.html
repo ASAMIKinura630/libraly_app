@@ -398,6 +398,71 @@
       color: #e65100;
     }
 
+    .badge--sub-lend {
+      background: #ede7f6;
+      color: #4527a0;
+      margin-left: 0.25rem;
+    }
+
+    .btn-sub-lend {
+      margin-left: 0.35rem;
+      font-size: 0.85rem;
+      padding: 0.25rem 0.55rem;
+    }
+
+    .sub-lend-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 1rem;
+    }
+
+    .sub-lend-dialog.is-hidden {
+      display: none;
+    }
+
+    .sub-lend-dialog__panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: var(--shadow);
+    }
+
+    .sub-lend-dialog__panel h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .sub-lend-dialog__desc {
+      font-size: 0.9rem;
+      color: var(--text-muted, #666);
+      margin: 0 0 1rem;
+    }
+
+    .sub-lend-dialog textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      resize: vertical;
+    }
+
+    .sub-lend-dialog .form-actions {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
     .loan-summary {
       margin-bottom: 1rem;
       padding: 1rem 1.15rem;
@@ -634,6 +699,13 @@
             <button type="button" id="summary-due-soon-csv-btn" class="loan-summary__link">返却予定リスト(CSV)</button>
           </div>
         </div>
+        <div class="loan-summary__item">
+          <span class="loan-summary__label">また貸し</span>
+          <span class="loan-summary__value" id="summary-sub-lend-count">—</span>
+          <div class="loan-summary__actions">
+            <button type="button" id="summary-sub-lend-csv-btn" class="loan-summary__link">また貸しリスト(CSV)</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -687,7 +759,7 @@
                 </select>
               </div>
             </div>
-            <span class="form-hint">1人の学生が同時に借りられる図書は5冊まで</span>
+            <span class="form-hint">公式借り手・実保持者（また貸し）の両方を含め、1人の学生が同時に借りられる図書は5冊まで</span>
           </section>
         </div>
         <div class="form-actions">
@@ -707,12 +779,14 @@
             <option value="lending" selected>貸出中のみ</option>
             <option value="due_soon">返却予定が近い</option>
             <option value="overdue">延滞のみ</option>
+            <option value="sub_lend">また貸しのみ</option>
             <option value="returned">返却済みのみ</option>
           </select>
         </div>
         <div class="list-toolbar__actions">
           <button type="button" id="export-due-soon-csv-btn" class="btn btn-secondary">返却予定リスト(CSV)</button>
           <button type="button" id="export-overdue-csv-btn" class="btn btn-secondary">延滞リスト(CSV)</button>
+          <button type="button" id="export-sub-lend-csv-btn" class="btn btn-secondary">また貸しリスト(CSV)</button>
         </div>
       </div>
 
@@ -746,6 +820,27 @@
         <p class="loading">読み込み中…</p>
       </div>
     </section>
+
+    <div id="sub-lend-dialog" class="sub-lend-dialog is-hidden" role="dialog" aria-modal="true" aria-labelledby="sub-lend-dialog-title" hidden>
+      <div class="sub-lend-dialog__panel">
+        <h3 id="sub-lend-dialog-title">また貸しを記録</h3>
+        <p id="sub-lend-dialog-desc" class="sub-lend-dialog__desc"></p>
+        <div class="form-group">
+          <label for="sub-lend-holder">実際の保持者 <span aria-hidden="true">*</span></label>
+          <select id="sub-lend-holder" required>
+            <option value="">選択してください</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="sub-lend-note">メモ（任意）</label>
+          <textarea id="sub-lend-note" rows="2" placeholder="例：友人に渡した"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="sub-lend-cancel" class="btn btn-secondary">キャンセル</button>
+          <button type="button" id="sub-lend-submit" class="btn btn-primary">記録する</button>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -777,6 +872,7 @@
     let lendFacultyFilter = "";
     let lendDepartmentFilter = "";
     let currentStaff = null;
+    let subLendTargetId = null;
 
     const messageEl = document.getElementById("message");
     const operatorHintEl = document.getElementById("operator-hint");
@@ -800,6 +896,15 @@
     const summaryDueSoonCountEl = document.getElementById("summary-due-soon-count");
     const summaryOverdueCsvBtn = document.getElementById("summary-overdue-csv-btn");
     const summaryDueSoonCsvBtn = document.getElementById("summary-due-soon-csv-btn");
+    const summarySubLendCountEl = document.getElementById("summary-sub-lend-count");
+    const summarySubLendCsvBtn = document.getElementById("summary-sub-lend-csv-btn");
+    const exportSubLendCsvBtn = document.getElementById("export-sub-lend-csv-btn");
+    const subLendDialogEl = document.getElementById("sub-lend-dialog");
+    const subLendDialogDescEl = document.getElementById("sub-lend-dialog-desc");
+    const subLendHolderSelect = document.getElementById("sub-lend-holder");
+    const subLendNoteInput = document.getElementById("sub-lend-note");
+    const subLendCancelBtn = document.getElementById("sub-lend-cancel");
+    const subLendSubmitBtn = document.getElementById("sub-lend-submit");
 
     function escapeHtml(str) {
       if (str == null) return "";
@@ -952,13 +1057,21 @@
       return historyCache.filter(isDueSoon);
     }
 
+    function getSubLendRecords() {
+      return historyCache.filter(function (h) {
+        return !h.is_returned && h.is_sub_lend;
+      });
+    }
+
     function updateLoanSummary() {
       const active = getActiveLendingRecords().length;
       const overdue = getOverdueRecords().length;
       const dueSoon = getDueSoonRecords().length;
+      const subLend = getSubLendRecords().length;
       summaryActiveCountEl.textContent = String(active);
       summaryOverdueCountEl.textContent = String(overdue);
       summaryDueSoonCountEl.textContent = String(dueSoon);
+      summarySubLendCountEl.textContent = String(subLend);
     }
 
     function downloadCsvFile(filename, header, rows, emptyMessage) {
@@ -996,9 +1109,9 @@
     function countActiveLoansForStudent(studentNumber) {
       let count = 0;
       historyCache.forEach(function (h) {
-        if (!h.is_returned && h.student_number === studentNumber) {
-          count += 1;
-        }
+        if (h.is_returned) return;
+        if (h.student_number === studentNumber) count += 1;
+        if (h.is_sub_lend && h.actual_holder_student_number === studentNumber) count += 1;
       });
       return count;
     }
@@ -1232,6 +1345,22 @@
       return found ? found.name : "（不明）";
     }
 
+    function getActualHolderName(record) {
+      if (!record.is_sub_lend || !record.actual_holder_student_number) return "—";
+      if (record.actual_holder && record.actual_holder.name) return record.actual_holder.name;
+      const found = studentsCache.find(function (s) {
+        return s.student_number === record.actual_holder_student_number;
+      });
+      return found ? found.name : record.actual_holder_student_number;
+    }
+
+    function getActualHolderDisplay(record) {
+      if (!record.is_sub_lend || !record.actual_holder_student_number) return "—";
+      return (
+        record.actual_holder_student_number + " — " + getActualHolderName(record)
+      );
+    }
+
     function matchesSearchField(value, query) {
       if (!query) return true;
       return String(value).toLowerCase().indexOf(query.toLowerCase()) !== -1;
@@ -1327,6 +1456,161 @@
       }
     }
 
+    function exportSubLendCsv() {
+      const records = getSubLendRecords();
+      const today = toDateInputValue(new Date());
+      downloadCsvFile(
+        "また貸しリスト_" + today + ".csv",
+        [
+          "図書",
+          "著者",
+          "公式学籍番号",
+          "公式氏名",
+          "実保持者学籍番号",
+          "実保持者氏名",
+          "貸し出し日",
+          "返却予定日",
+          "メモ",
+          "記録日時",
+          "記録担当者",
+        ],
+        records.map(function (h) {
+          return [
+            getBookTitle(h),
+            getBookAuthor(h),
+            h.student_number,
+            getStudentName(h),
+            h.actual_holder_student_number,
+            getActualHolderName(h),
+            formatDateOnly(h.created_at),
+            formatDateOnly(h.due_date),
+            h.sub_lend_note || "",
+            formatDateTime(h.sub_lend_recorded_at),
+            getProcessorName(h.sub_lend_staff),
+          ];
+        }),
+        "また貸し中の履歴がありません。CSVは出力されませんでした。"
+      );
+      if (records.length > 0) {
+        showMessage(
+          "また貸しリストを CSV で出力しました（" + records.length + " 件）。",
+          "success"
+        );
+      }
+    }
+
+    function populateSubLendHolderSelect(officialStudentNumber) {
+      subLendHolderSelect.innerHTML = '<option value="">選択してください</option>';
+      studentsCache.forEach(function (s) {
+        if (s.student_number === officialStudentNumber) return;
+        const opt = document.createElement("option");
+        opt.value = s.student_number;
+        opt.textContent = s.student_number + " — " + s.name;
+        subLendHolderSelect.appendChild(opt);
+      });
+    }
+
+    function openSubLendDialog(historyId) {
+      const record = historyCache.find(function (h) {
+        return h.id === historyId;
+      });
+      if (!record || record.is_returned || record.is_sub_lend) return;
+
+      subLendTargetId = historyId;
+      subLendNoteInput.value = "";
+      subLendDialogDescEl.textContent =
+        "「" +
+        getBookTitle(record) +
+        "」（公式借り手: " +
+        getStudentName(record) +
+        "）の実際の保持者を記録します。公式借り手は変更されません。";
+      populateSubLendHolderSelect(record.student_number);
+      subLendDialogEl.classList.remove("is-hidden");
+      subLendDialogEl.hidden = false;
+      subLendHolderSelect.focus();
+    }
+
+    function closeSubLendDialog() {
+      subLendTargetId = null;
+      subLendDialogEl.classList.add("is-hidden");
+      subLendDialogEl.hidden = true;
+      subLendHolderSelect.innerHTML = '<option value="">選択してください</option>';
+      subLendNoteInput.value = "";
+    }
+
+    async function recordSubLend() {
+      if (!currentStaff) {
+        showMessage(
+          "担当者が未登録です。マスタ保守の担当者マスタで、ログインメールと一致する担当者を登録してください。",
+          "error"
+        );
+        return;
+      }
+
+      const holderNumber = subLendHolderSelect.value;
+      const note = subLendNoteInput.value.trim();
+
+      if (!subLendTargetId) return;
+
+      const record = historyCache.find(function (h) {
+        return h.id === subLendTargetId;
+      });
+
+      if (!record || record.is_returned || record.is_sub_lend) {
+        showMessage("対象の履歴が見つからないか、すでに返却・記録済みです。", "warn");
+        closeSubLendDialog();
+        return;
+      }
+
+      if (!holderNumber) {
+        showMessage("実際の保持者を選択してください。", "warn");
+        return;
+      }
+
+      if (holderNumber === record.student_number) {
+        showMessage("実保持者は公式借り手と異なる学生を選択してください。", "warn");
+        return;
+      }
+
+      if (countActiveLoansForStudent(holderNumber) >= MAX_ACTIVE_LOANS_PER_STUDENT) {
+        showMessage(
+          "実保持者はすでに5冊の上限に達しています。返却または記録の見直しをしてください。",
+          "error"
+        );
+        return;
+      }
+
+      setBusy(true);
+
+      try {
+        const { error } = await supabaseClient
+          .from(HISTORY_TABLE)
+          .update({
+            is_sub_lend: true,
+            actual_holder_student_number: holderNumber,
+            sub_lend_note: note || null,
+            sub_lend_recorded_at: new Date().toISOString(),
+            sub_lend_recorded_by_staff_id: currentStaff.id,
+          })
+          .eq("id", subLendTargetId);
+
+        if (error) {
+          console.error(error);
+          showMessage(
+            "また貸しの記録に失敗しました。DBマイグレーション（20260615_add_sub_lend_fields.sql）を実行済みか確認してください。",
+            "error"
+          );
+          return;
+        }
+
+        closeSubLendDialog();
+        showMessage("また貸しを記録しました。", "success");
+        await loadHistory();
+      } finally {
+        setBusy(false);
+      }
+    }
+
     function getFilteredHistory() {
       let list = historyCache.slice();
 
@@ -1344,6 +1628,10 @@
         list = list.filter(function (h) {
           return h.is_returned;
         });
+      } else if (statusFilter === "sub_lend") {
+        list = list.filter(function (h) {
+          return !h.is_returned && h.is_sub_lend;
+        });
       }
 
       if (searchBookTitle || searchBookAuthor || searchStudentName) {
@@ -1351,7 +1639,8 @@
           return (
             matchesSearchField(getBookTitle(h), searchBookTitle) &&
             matchesSearchField(getBookAuthor(h), searchBookAuthor) &&
-            matchesSearchField(getStudentName(h), searchStudentName)
+            (matchesSearchField(getStudentName(h), searchStudentName) ||
+              matchesSearchField(getActualHolderName(h), searchStudentName))
           );
         });
       }
@@ -1382,7 +1671,7 @@
       historyListEl.innerHTML =
         '<table class="history-table">' +
         "<thead><tr>" +
-        "<th>状態</th><th>日数</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th><th>操作</th>" +
+        "<th>状態</th><th>日数</th><th>図書</th><th>著者</th><th>学籍番号</th><th>氏名</th><th>実保持者</th><th>貸し出し日</th><th>返却予定日</th><th>返却日</th><th>貸出処理者</th><th>返却処理者</th><th>操作</th>" +
         "</tr></thead><tbody>" +
         filtered
           .map(function (h) {
@@ -1393,9 +1682,19 @@
                 : isDueSoon(h)
                   ? '<span class="badge badge--due-soon">期限間近</span>'
                   : '<span class="badge badge--lending">貸出中</span>';
-            const actionCell = h.is_returned
-              ? "—"
-              : '<button type="button" class="btn btn-return" data-action="return">返却</button>';
+            const subLendBadge =
+              h.is_sub_lend && !h.is_returned
+                ? '<span class="badge badge--sub-lend">また貸し</span>'
+                : "";
+            let actionCell = "—";
+            if (!h.is_returned) {
+              actionCell =
+                '<button type="button" class="btn btn-return" data-action="return">返却</button>';
+              if (!h.is_sub_lend) {
+                actionCell +=
+                  '<button type="button" class="btn btn-secondary btn-sub-lend" data-action="sub-lend">また貸しを記録</button>';
+              }
+            }
 
             return (
               "<tr data-id=\"" +
@@ -1403,6 +1702,7 @@
               "\">" +
               "<td>" +
               statusBadge +
+              subLendBadge +
               "</td>" +
               "<td>" +
               escapeHtml(formatDaysColumn(h)) +
@@ -1418,6 +1718,9 @@
               "</td>" +
               "<td>" +
               escapeHtml(getStudentName(h)) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(getActualHolderDisplay(h)) +
               "</td>" +
               "<td>" +
               escapeHtml(formatDateOnly(h.created_at)) +
@@ -1523,10 +1826,13 @@
         .select(
           "id, book_id, student_number, is_returned, due_date, returned_at, created_at, " +
             "lent_by_staff_id, returned_by_staff_id, " +
+            "is_sub_lend, actual_holder_student_number, sub_lend_note, sub_lend_recorded_at, sub_lend_recorded_by_staff_id, " +
             "libraly_app ( id, title, name ), " +
             "libraly_app_student ( student_number, name ), " +
+            "actual_holder:libraly_app_student!actual_holder_student_number ( student_number, name ), " +
             "lent_staff:libraly_app_staff!lent_by_staff_id ( name ), " +
-            "returned_staff:libraly_app_staff!returned_by_staff_id ( name )"
+            "returned_staff:libraly_app_staff!returned_by_staff_id ( name ), " +
+            "sub_lend_staff:libraly_app_staff!sub_lend_recorded_by_staff_id ( name )"
         )
         .order("created_at", { ascending: false });
 
@@ -1536,7 +1842,10 @@
         historyListEl.innerHTML = "";
         listCountEl.textContent = "";
         updateLoanSummary();
-        showMessage("貸し出し履歴の取得に失敗しました。テーブルが作成されているか確認してください。", "error");
+        showMessage(
+          "貸し出し履歴の取得に失敗しました。テーブルが作成されているか、また貸し用マイグレーション（sql/20260615_add_sub_lend_fields.sql）を実行済みか確認してください。",
+          "error"
+        );
         return false;
       }
 
@@ -1686,8 +1995,15 @@
 
     exportOverdueCsvBtn.addEventListener("click", exportOverdueCsv);
     exportDueSoonCsvBtn.addEventListener("click", exportDueSoonCsv);
+    exportSubLendCsvBtn.addEventListener("click", exportSubLendCsv);
     summaryOverdueCsvBtn.addEventListener("click", exportOverdueCsv);
     summaryDueSoonCsvBtn.addEventListener("click", exportDueSoonCsv);
+    summarySubLendCsvBtn.addEventListener("click", exportSubLendCsv);
+    subLendCancelBtn.addEventListener("click", closeSubLendDialog);
+    subLendSubmitBtn.addEventListener("click", recordSubLend);
+    subLendDialogEl.addEventListener("click", function (e) {
+      if (e.target === subLendDialogEl) closeSubLendDialog();
+    });
 
     searchBookTitleInput.addEventListener("input", onSearchInputChange);
     searchBookAuthorInput.addEventListener("input", onSearchInputChange);
@@ -1703,6 +2019,8 @@
       const id = row.getAttribute("data-id");
       if (btn.getAttribute("data-action") === "return") {
         returnBook(id);
+      } else if (btn.getAttribute("data-action") === "sub-lend") {
+        openSubLendDialog(id);
       }
     });
 
