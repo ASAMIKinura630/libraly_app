@@ -479,27 +479,29 @@
       width: 9rem;
     }
 
-    .history-table .col-staff {
-      width: 8rem;
-    }
-
     .history-table .actions {
-      width: 7.5rem;
+      width: 9.5rem;
+      white-space: nowrap;
+    }
+
+    .history-table .actions-inner {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
       gap: 0.35rem;
-      align-items: stretch;
     }
 
-    .history-table .actions .btn {
-      width: 100%;
-      text-align: center;
-    }
-
-    .history-table .actions .btn-sub-lend {
-      margin-left: 0;
+    .history-table .actions-inner .btn {
+      flex: 0 0 auto;
+      padding: 0.3rem 0.55rem;
       font-size: 0.85rem;
-      padding: 0.25rem 0.55rem;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    .history-table .actions-inner .btn-sub-lend {
+      margin-left: 0;
     }
 
     .sub-lend-dialog {
@@ -1974,7 +1976,6 @@
         renderHistoryStackHead("氏名", "実保持者") +
         renderHistoryStackHead("貸し出し日", "返却予定日") +
         renderHistoryStackHead("返却日", "貸出処理者") +
-        '<th class="col-staff">返却処理者</th>' +
         '<th class="actions">操作</th>' +
         "</tr></thead><tbody>" +
         filtered
@@ -1982,11 +1983,13 @@
             let actionCell = "—";
             if (!h.is_returned) {
               actionCell =
+                '<div class="actions-inner">' +
                 '<button type="button" class="btn btn-return" data-action="return">返却</button>';
               if (!h.is_sub_lend) {
                 actionCell +=
                   '<button type="button" class="btn btn-secondary btn-sub-lend" data-action="sub-lend">また貸し</button>';
               }
+              actionCell += "</div>";
             }
 
             return (
@@ -2024,9 +2027,6 @@
                 getProcessorName(h.lent_staff),
                 true
               ) +
-              "</td>" +
-              '<td class="col-staff">' +
-              escapeHtml(getProcessorName(h.returned_staff)) +
               "</td>" +
               '<td class="actions">' +
               actionCell +
