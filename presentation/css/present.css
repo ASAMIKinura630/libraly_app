@@ -309,6 +309,52 @@ body {
   color: var(--success-text);
 }
 
+.mock-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.mock-status-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.mock-status-dot--lending { background: #1565c0; }
+.mock-status-dot--sub { background: #4527a0; }
+.mock-status-dot--due-soon { background: #ef6c00; }
+.mock-status-dot--overdue { background: #c62828; }
+.mock-status-dot--returned { background: #2e7d32; }
+
+.mock-table--compact td {
+  white-space: normal;
+  vertical-align: top;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.mock-table--compact .mock-cell-sub {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.mock-table .actions-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.mock-btn--sub-lend {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.45rem;
+}
+
 .mock-lend-panels {
   display: grid;
   gap: 0.75rem;

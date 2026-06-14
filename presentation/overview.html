@@ -349,6 +349,17 @@
       color: var(--accent);
     }
 
+    .history-demo .mock-status-dot {
+      display: inline-block;
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      vertical-align: middle;
+    }
+
+    .history-demo .mock-status-dot--lending { background: #1565c0; }
+    .history-demo .mock-status-dot--sub { background: #4527a0; }
+
     .footer-note {
       text-align: center;
       font-size: 0.82rem;
@@ -433,7 +444,7 @@
       <li>
         <span class="points__num" aria-hidden="true">6</span>
         <div class="points__body">
-          <p>貸出・返却時に処理担当者を自動記録し、履歴と画面上部に氏名を表示</p>
+          <p>貸出・返却時に処理担当者を自動記録。延滞・また貸しの一覧・CSV出力、状態は<strong>●と凡例</strong>で表示</p>
         </div>
       </li>
     </ol>
@@ -467,7 +478,14 @@
           <span class="rules-list__icon" aria-hidden="true">📕</span>
           <div class="rules-list__body">
             <h3>同時貸出は5冊まで</h3>
-            <p>1人の学生が<strong>同時に</strong>借りられる図書は<strong>5冊まで</strong>です（返却済みはカウントしません）。6冊目の貸出はできません。</p>
+            <p>1人の学生が<strong>同時に</strong>借りられる図書は<strong>5冊まで</strong>（公式借り手・また貸しの<strong>実保持者</strong>の両方をカウント。返却済みは除く）。</p>
+          </div>
+        </li>
+        <li>
+          <span class="rules-list__icon" aria-hidden="true">🔄</span>
+          <div class="rules-list__body">
+            <h3>また貸しの記録</h3>
+            <p>公式借り手（A）と異なる学生（B）が本を持っている場合、一覧の「<strong>また貸し</strong>」から記録。Aは変更せず、延滞・督促はA基準のまま。</p>
           </div>
         </li>
       </ul>
@@ -545,14 +563,15 @@
           <div class="history-demo">
             <table>
               <thead>
-                <tr><th>図書</th><th>学生</th><th>貸出担当</th><th>返却担当</th></tr>
+                <tr><th>図書</th><th>氏名 / 実保持者</th><th>状態</th><th>貸出担当</th><th>操作</th></tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>プログラミング入門</td>
-                  <td>山田 太郎</td>
+                  <td>1Q84</td>
+                  <td>山田 太郎<br><span style="color:var(--muted);font-size:0.72rem;">斎藤 真由</span></td>
+                  <td><span class="mock-status-dot mock-status-dot--lending" aria-hidden="true"></span> <span class="mock-status-dot mock-status-dot--sub" aria-hidden="true"></span></td>
                   <td class="highlight">芹優太郎</td>
-                  <td>—</td>
+                  <td>返却</td>
                 </tr>
               </tbody>
             </table>

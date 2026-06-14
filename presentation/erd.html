@@ -69,9 +69,9 @@
           <text x="428" y="411" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
         </g>
 
-        <path d="M607 420 L607 372 L440 372" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+        <path d="M607 420 L607 385 L440 385" stroke="#2563eb" stroke-width="2.5" fill="none"/>
         <use href="#crow-one" transform="translate(607,404)"/>
-        <use href="#crow-many" transform="translate(440,364)"/>
+        <use href="#crow-many" transform="translate(440,377)"/>
         <g>
           <rect x="498" y="378" width="40" height="18" rx="4" fill="#fff" stroke="#93c5fd" stroke-width="1"/>
           <text x="518" y="391" font-size="13" font-weight="700" fill="#1d4ed8" text-anchor="middle">1:N</text>
@@ -142,19 +142,20 @@
 
         <!-- 図書貸出履歴（中心） -->
         <g>
-          <rect x="245" y="204" width="210" height="168" rx="4" fill="#f8fbff" stroke="#2563eb" stroke-width="2"/>
+          <rect x="245" y="204" width="210" height="181" rx="4" fill="#f8fbff" stroke="#2563eb" stroke-width="2"/>
           <rect x="245" y="204" width="210" height="30" rx="4" fill="#2563eb"/>
           <rect x="245" y="226" width="210" height="8" fill="#2563eb"/>
           <text x="350" y="224" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">図書貸出履歴</text>
           <text x="254" y="250" font-size="11" fill="#1e293b"><tspan font-weight="700" fill="#b45309">PK</tspan> ID（識別子）</text>
           <text x="254" y="265" font-size="11" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 図書ID</text>
-          <text x="254" y="280" font-size="11" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 学籍番号</text>
-          <text x="254" y="295" font-size="11" fill="#1e293b">返却フラグ</text>
-          <text x="254" y="310" font-size="11" fill="#1e293b">返却予定日</text>
-          <text x="254" y="325" font-size="11" fill="#1e293b">返却日時</text>
-          <text x="254" y="340" font-size="11" fill="#1e293b">貸出日時</text>
-          <text x="254" y="355" font-size="11" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 貸出処理者ID</text>
-          <text x="254" y="370" font-size="11" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 返却処理者ID</text>
+          <text x="254" y="280" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 学籍番号（公式借り手）</text>
+          <text x="254" y="293" font-size="10" fill="#1e293b">返却フラグ / 返却予定日</text>
+          <text x="254" y="306" font-size="10" fill="#1e293b">貸出日時 / 返却日時</text>
+          <text x="254" y="319" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 貸出処理者ID</text>
+          <text x="254" y="332" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#1d4ed8">FK</tspan> 返却処理者ID</text>
+          <text x="254" y="348" font-size="10" fill="#4527a0" font-weight="600">また貸しフラグ</text>
+          <text x="254" y="361" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#4527a0">FK</tspan> 実保持者学籍番号</text>
+          <text x="254" y="374" font-size="10" fill="#1e293b"><tspan font-weight="700" fill="#4527a0">FK</tspan> また貸し記録者ID</text>
         </g>
 
         <!-- 学部マスタ -->
@@ -231,8 +232,9 @@
         <ul>
           <li>カテゴリ → 図書（1対多、削除時はカテゴリIDを空にする）</li>
           <li>学部 → 学科 → 学生（1対多、参照中は削除不可）</li>
-          <li>図書・学生 → 貸出履歴（1対多、参照中は削除不可）</li>
-          <li>担当者 → 貸出履歴（貸出・返却の処理者）</li>
+          <li>図書・学生（公式借り手）→ 貸出履歴（1対多、参照中は削除不可）</li>
+          <li>学生（実保持者）→ 貸出履歴（また貸し時、公式借り手は変更しない）</li>
+          <li>担当者 → 貸出履歴（貸出・返却・また貸し記録の処理者）</li>
           <li>認証ユーザー ↔ 担当者（メールアドレス一致で論理紐づけ）</li>
         </ul>
       </section>

@@ -67,33 +67,46 @@
 
             <div class="mock-card">
               <h2>貸し出し履歴</h2>
+              <div class="mock-status-legend" aria-label="状態の凡例">
+                <span>貸出中：<span class="mock-status-dot mock-status-dot--lending" aria-hidden="true"></span></span>
+                <span>また貸し：<span class="mock-status-dot mock-status-dot--sub" aria-hidden="true"></span></span>
+                <span>期限間近：<span class="mock-status-dot mock-status-dot--due-soon" aria-hidden="true"></span></span>
+                <span>延滞：<span class="mock-status-dot mock-status-dot--overdue" aria-hidden="true"></span>延滞</span>
+                <span>返却済み：<span class="mock-status-dot mock-status-dot--returned" aria-hidden="true"></span></span>
+              </div>
               <div class="mock-table-wrap">
-                <table class="mock-table">
+                <table class="mock-table mock-table--compact">
                   <thead>
                     <tr>
-                      <th>図書</th>
-                      <th>学生</th>
-                      <th>貸出日</th>
                       <th>状態</th>
-                      <th>貸出担当</th>
+                      <th>日数</th>
+                      <th>図書<br><span style="font-weight:400;color:var(--muted);">著者</span></th>
+                      <th>氏名<br><span style="font-weight:400;color:var(--muted);">実保持者</span></th>
+                      <th>貸し出し日<br><span style="font-weight:400;color:var(--muted);">返却予定日</span></th>
+                      <th>返却日<br><span style="font-weight:400;color:var(--muted);">貸出処理者</span></th>
                       <th>操作</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td>プログラミング入門</td>
-                      <td>山田 太郎</td>
-                      <td>2026/06/01</td>
-                      <td><span class="mock-badge mock-badge--lending">貸出中</span></td>
-                      <td>芹優太郎</td>
-                      <td><button type="button" class="mock-btn mock-btn--return">返却する</button></td>
+                      <td><span class="mock-status-dot mock-status-dot--lending" aria-hidden="true"></span> <span class="mock-status-dot mock-status-dot--sub" aria-hidden="true"></span></td>
+                      <td>12</td>
+                      <td>1Q84<br><span class="mock-cell-sub">村上春樹</span></td>
+                      <td>山田 太郎<br><span class="mock-cell-sub">斎藤 真由</span></td>
+                      <td>2026/06/01<br><span class="mock-cell-sub">2026/06/15</span></td>
+                      <td>—<br><span class="mock-cell-sub">芹優太郎</span></td>
+                      <td class="actions-inline">
+                        <button type="button" class="mock-btn mock-btn--return">返却</button>
+                        <button type="button" class="mock-btn mock-btn--sub-lend">また貸し</button>
+                      </td>
                     </tr>
                     <tr>
-                      <td>データベース設計</td>
-                      <td>佐藤 花子</td>
-                      <td>2026/05/20</td>
-                      <td><span class="mock-badge mock-badge--returned">返却済</span></td>
-                      <td>芹優太郎</td>
+                      <td><span class="mock-status-dot mock-status-dot--returned" aria-hidden="true"></span></td>
+                      <td>—</td>
+                      <td>データベース設計<br><span class="mock-cell-sub">田中一郎</span></td>
+                      <td>佐藤 花子<br><span class="mock-cell-sub">—</span></td>
+                      <td>2026/05/20<br><span class="mock-cell-sub">2026/06/03</span></td>
+                      <td>2026/06/02<br><span class="mock-cell-sub">芹優太郎</span></td>
                       <td>—</td>
                     </tr>
                   </tbody>
@@ -108,11 +121,12 @@
         <h2>説明ポイント</h2>
         <ul>
           <li>日常業務の<strong>メイン画面</strong>です。</li>
-          <li>図書と学生を選んで「貸出する」で登録します。</li>
-          <li>貸出中の行から「返却する」で返却処理します。</li>
-          <li>貸出・返却時に<strong>ログイン担当者</strong>が自動記録されます。</li>
-          <li>履歴テーブルに貸出担当・返却担当が表示されます。</li>
-          <li>図書名・著者・学生名で履歴を検索できます。</li>
+          <li>図書と学生を選んで「貸出する」で登録（同時5冊まで、公式借り手・実保持者の両方をカウント）。</li>
+          <li>貸出中の行から「返却」で返却処理します。</li>
+          <li>「また貸し」で実保持者（B）を記録。公式借り手（A）は変更しません。</li>
+          <li>状態は<strong>●と凡例</strong>で表示（貸出中・また貸し・期限間近・延滞・返却済み）。</li>
+          <li>延滞・また貸しリストの<strong>CSV出力</strong>、絞り込み検索に対応。</li>
+          <li>貸出時に<strong>ログイン担当者</strong>が自動記録され、履歴に表示されます。</li>
         </ul>
       </aside>
     </div>
