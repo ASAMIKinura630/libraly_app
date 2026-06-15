@@ -8,7 +8,7 @@
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/book-qr.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/auth-bar.css" />
   <link rel="stylesheet" href="css/global-nav.css" />
@@ -418,9 +418,14 @@
           payload,
           { width: 200, margin: 1 },
           function (err) {
-            if (err) console.error(err);
+            if (err) {
+              console.error(err);
+              showError("QR コードの生成に失敗しました。");
+            }
           }
         );
+      } else if (canvasEl) {
+        showError("QR コード用ライブラリの読み込みに失敗しました。ページを再読み込みしてください。");
       }
 
       const printBtn = document.getElementById("book-qr-print-btn");

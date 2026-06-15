@@ -8,7 +8,7 @@
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/book-qr.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/auth-bar.css" />
   <link rel="stylesheet" href="css/global-nav.css" />
@@ -945,14 +945,23 @@
       qrDialogEl.classList.remove("is-hidden");
       qrDialogEl.hidden = false;
       if (typeof QRCode !== "undefined") {
+        const ctx = qrDialogCanvasEl.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, qrDialogCanvasEl.width, qrDialogCanvasEl.height);
+        }
         QRCode.toCanvas(
           qrDialogCanvasEl,
           payload,
           { width: 220, margin: 1 },
           function (err) {
-            if (err) console.error(err);
+            if (err) {
+              console.error(err);
+              showMessage("QR コードの生成に失敗しました。", "error");
+            }
           }
         );
+      } else {
+        showMessage("QR コード用ライブラリの読み込みに失敗しました。ページを再読み込みしてください。", "error");
       }
     }
 
