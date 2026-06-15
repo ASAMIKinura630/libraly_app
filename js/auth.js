@@ -212,6 +212,10 @@
     if (!session || !session.user || !session.user.email) {
       return null;
     }
+    const meta = session.user.user_metadata || {};
+    if (meta.role === "student") {
+      return null;
+    }
 
     const { data, error } = await getClient()
       .from(STAFF_TABLE)

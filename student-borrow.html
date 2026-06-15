@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生セルフ貸出 | 図書館保守システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/book-qr.js"></script>
+  <script src="js/student-auth.js"></script>
+  <link rel="stylesheet" href="css/theme.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1rem 1rem 2.5rem;
+    }
+    .top-link {
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .top-link a { color: var(--accent); font-weight: 600; }
+    .header h1 { margin: 0; font-size: 1.45rem; }
+    .header p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.92rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 { margin: 0 0 0.75rem; font-size: 1.05rem; }
+    .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .auth-tabs button {
+      flex: 1;
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-alt);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .auth-tabs button.is-active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .form-group { margin-bottom: 0.85rem; }
+    .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.9rem; }
+    .form-group input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.55rem 0.75rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .form-hint { font-size: 0.82rem; color: var(--muted); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.5rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+    .btn-secondary { background: var(--panel-alt); color: var(--text); border: 1px solid var(--border); }
+    .btn-logout { font-size: 0.85rem; padding: 0.35rem 0.75rem; min-height: 36px; }
+    .message {
+      display: none;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.92rem;
+    }
+    .message.is-visible { display: block; }
+    .message--success { background: var(--success-bg); color: var(--success-text); }
+    .message--warn { background: var(--warn-bg); color: var(--warn-text); }
+    .message--error { background: var(--error-bg); color: var(--error-text); }
+    .student-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-ring);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+    .student-bar strong { color: var(--accent); }
+    .loan-count { font-size: 0.88rem; color: var(--muted); margin-top: 0.15rem; }
+    #qr-reader {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+    #qr-reader video { border-radius: 8px; }
+    .scan-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .book-preview {
+      margin-top: 0.85rem;
+      padding: 0.75rem;
+      background: var(--panel-alt);
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+    }
+    .book-preview h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+    .book-preview p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+    .loan-list { list-style: none; margin: 0; padding: 0; }
+    .loan-list li {
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .loan-list li:last-child { border-bottom: none; }
+    .is-hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <p class="top-link"><a href="index.html">職員の方はこちら（貸出・返却・マスタ保守）</a></p>
+
+    <section id="auth-gate">
+      <header class="header">
+        <h1>学生セルフ貸出</h1>
+        <p>図書の QR コードを読み取って借ります</p>
+      </header>
+
+      <div class="auth-tabs" role="tablist">
+        <button type="button" id="auth-tab-login" class="is-active">ログイン</button>
+        <button type="button" id="auth-tab-signup">初回登録</button>
+      </div>
+
+      <div id="auth-panel-login" class="card">
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="login-student-number">学籍番号</label>
+            <input type="text" id="login-student-number" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">パスワード</label>
+            <input type="password" id="login-password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">ログイン</button>
+        </form>
+      </div>
+
+      <div id="auth-panel-signup" class="card is-hidden" hidden>
+        <form id="signup-form" novalidate>
+          <div class="form-group">
+            <label for="signup-student-number">学籍番号</label>
+            <input type="text" id="signup-student-number" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="signup-birth-date">生年月日</label>
+            <input type="text" id="signup-birth-date" inputmode="numeric" maxlength="8" placeholder="YYYYMMDD（例：20020415）" required />
+            <span class="form-hint">学生マスタと同じ形式で入力（本人確認）</span>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">パスワード</label>
+            <input type="password" id="signup-password" autocomplete="new-password" required />
+            <span class="form-hint">6文字以上</span>
+          </div>
+          <button type="submit" class="btn btn-primary">アカウント登録</button>
+        </form>
+      </div>
+    </section>
+
+    <div id="app-main" class="is-hidden" hidden>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+
+      <div class="student-bar">
+        <div>
+          <span>ログイン中: <strong id="student-name">—</strong></span>
+          <div class="loan-count" id="loan-count">貸出中: — 冊</div>
+        </div>
+        <button type="button" id="logout-btn" class="btn btn-secondary btn-logout">ログアウト</button>
+      </div>
+
+      <section class="card">
+        <h2>図書を借りる</h2>
+        <p class="form-hint" style="margin-top:0;">本に貼られた QR コードをカメラにかざしてください。</p>
+        <div id="qr-reader"></div>
+        <div class="scan-actions">
+          <button type="button" id="scan-start-btn" class="btn btn-secondary">カメラを起動</button>
+          <button type="button" id="scan-stop-btn" class="btn btn-secondary" disabled>カメラを停止</button>
+        </div>
+        <div id="book-preview" class="book-preview is-hidden" hidden></div>
+        <button type="button" id="borrow-btn" class="btn btn-primary" style="margin-top:0.85rem;" disabled>この図書を借りる</button>
+      </section>
+
+      <section class="card">
+        <h2>あなたの貸出中</h2>
+        <ul id="my-loans" class="loan-list">
+          <li>読み込み中…</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const HISTORY_TABLE = "libraly_app_lending_history";
+    const BOOK_TABLE = "libraly_app";
+    const MAX_ACTIVE_LOANS = 5;
+    const MESSAGE_HIDE_MS = 4000;
+
+    let messageTimer = null;
+    let isBusy = false;
+    let currentStudent = null;
+    let myLoansCache = [];
+    let scannedBook = null;
+    let qrScanner = null;
+    let scanRunning = false;
+
+    const authGateEl = document.getElementById("auth-gate");
+    const appMainEl = document.getElementById("app-main");
+    const messageEl = document.getElementById("message");
+    const studentNameEl = document.getElementById("student-name");
+    const loanCountEl = document.getElementById("loan-count");
+    const bookPreviewEl = document.getElementById("book-preview");
+    const borrowBtn = document.getElementById("borrow-btn");
+    const myLoansEl = document.getElementById("my-loans");
+    const scanStartBtn = document.getElementById("scan-start-btn");
+    const scanStopBtn = document.getElementById("scan-stop-btn");
+
+    function escapeHtml(str) {
+      if (str == null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showMessage(text, type) {
+      if (messageTimer) clearTimeout(messageTimer);
+      messageEl.textContent = text;
+      messageEl.className = "message is-visible message--" + type;
+      if (type !== "error") {
+        messageTimer = setTimeout(function () {
+          messageEl.classList.remove("is-visible");
+        }, MESSAGE_HIDE_MS);
+      }
+    }
+
+    function toDateInputValue(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+
+    function getLendRecordDates() {
+      const today = new Date();
+      const due = new Date(today.getTime());
+      due.setDate(due.getDate() + 14);
+      return {
+        lentAt: today.toISOString(),
+        dueDate: toDateInputValue(due),
+      };
+    }
+
+    function countActiveLoans(studentNumber) {
+      let count = 0;
+      myLoansCache.forEach(function (h) {
+        if (h.is_returned) return;
+        if (h.student_number === studentNumber) count += 1;
+        if (h.is_sub_lend && h.actual_holder_student_number === studentNumber) count += 1;
+      });
+      return count;
+    }
+
+    function showAuthGate() {
+      authGateEl.classList.remove("is-hidden");
+      authGateEl.hidden = false;
+      appMainEl.classList.add("is-hidden");
+      appMainEl.hidden = true;
+    }
+
+    function showAppMain() {
+      authGateEl.classList.add("is-hidden");
+      authGateEl.hidden = true;
+      appMainEl.classList.remove("is-hidden");
+      appMainEl.hidden = false;
+    }
+
+    function setAuthTab(mode) {
+      const isLogin = mode === "login";
+      document.getElementById("auth-tab-login").classList.toggle("is-active", isLogin);
+      document.getElementById("auth-tab-signup").classList.toggle("is-active", !isLogin);
+      const loginPanel = document.getElementById("auth-panel-login");
+      const signupPanel = document.getElementById("auth-panel-signup");
+      loginPanel.classList.toggle("is-hidden", !isLogin);
+      loginPanel.hidden = !isLogin;
+      signupPanel.classList.toggle("is-hidden", isLogin);
+      signupPanel.hidden = isLogin;
+    }
+
+    function clearBookPreview() {
+      scannedBook = null;
+      bookPreviewEl.classList.add("is-hidden");
+      bookPreviewEl.hidden = true;
+      bookPreviewEl.innerHTML = "";
+      borrowBtn.disabled = true;
+    }
+
+    function showBookPreview(book, onLoan) {
+      scannedBook = { book: book, onLoan: onLoan };
+      bookPreviewEl.innerHTML =
+        "<h3>" + escapeHtml(book.title) + "</h3>" +
+        "<p>著者: " + escapeHtml(book.name) + "</p>" +
+        (onLoan ? '<p style="color:var(--warn-text);font-weight:600;">この図書は現在貸出中です。</p>' : "");
+      bookPreviewEl.classList.remove("is-hidden");
+      bookPreviewEl.hidden = false;
+      borrowBtn.disabled = onLoan || isBusy;
+    }
+
+    async function loadBookById(bookId) {
+      const { data, error } = await LibralyAuth.getClient()
+        .from(BOOK_TABLE)
+        .select("id, title, name")
+        .eq("id", bookId)
+        .maybeSingle();
+      if (error) {
+        console.error(error);
+        return null;
+      }
+      return data;
+    }
+
+    async function isBookOnLoan(bookId) {
+      const { data, error } = await LibralyAuth.getClient()
+        .from(HISTORY_TABLE)
+        .select("id")
+        .eq("book_id", bookId)
+        .eq("is_returned", false)
+        .limit(1);
+      if (error) {
+        console.error(error);
+        return true;
+      }
+      return data && data.length > 0;
+    }
+
+    async function handleQrScan(decodedText) {
+      const bookId = LibralyBookQr.parseBookQrPayload(decodedText);
+      if (!bookId) {
+        showMessage("図書の QR コードではありません。", "warn");
+        return;
+      }
+      await stopScanner();
+      const book = await loadBookById(bookId);
+      if (!book) {
+        showMessage("図書マスタに登録されていない QR です。", "error");
+        return;
+      }
+      const onLoan = await isBookOnLoan(bookId);
+      showBookPreview(book, onLoan);
+      if (!onLoan) {
+        showMessage("「" + book.title + "」を確認しました。借りる場合はボタンを押してください。", "success");
+      } else {
+        showMessage("この図書はすでに貸出中です。", "warn");
+      }
+    }
+
+    async function startScanner() {
+      if (scanRunning || typeof Html5Qrcode === "undefined") {
+        showMessage("カメラ機能を利用できません。", "error");
+        return;
+      }
+      try {
+        qrScanner = new Html5Qrcode("qr-reader");
+        await qrScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          function (text) {
+            handleQrScan(text);
+          },
+          function () {}
+        );
+        scanRunning = true;
+        scanStartBtn.disabled = true;
+        scanStopBtn.disabled = false;
+        showMessage("カメラを起動しました。QR をかざしてください。", "success");
+      } catch (err) {
+        console.error(err);
+        showMessage("カメラの起動に失敗しました。ブラウザのカメラ許可を確認してください。", "error");
+      }
+    }
+
+    async function stopScanner() {
+      if (!qrScanner || !scanRunning) return;
+      try {
+        await qrScanner.stop();
+        await qrScanner.clear();
+      } catch (err) {
+        console.warn(err);
+      }
+      scanRunning = false;
+      scanStartBtn.disabled = false;
+      scanStopBtn.disabled = true;
+    }
+
+    async function loadMyLoans() {
+      if (!currentStudent) return;
+      const { data, error } = await LibralyAuth.getClient()
+        .from(HISTORY_TABLE)
+        .select(
+          "id, book_id, student_number, is_returned, due_date, is_sub_lend, actual_holder_student_number, " +
+            "libraly_app ( title, name )"
+        )
+        .eq("student_number", currentStudent.student_number)
+        .eq("is_returned", false)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        myLoansEl.innerHTML = "<li>履歴の取得に失敗しました。</li>";
+        return;
+      }
+
+      myLoansCache = data || [];
+      const activeCount = countActiveLoans(currentStudent.student_number);
+      loanCountEl.textContent =
+        "貸出中: " + activeCount + " 冊（上限 " + MAX_ACTIVE_LOANS + " 冊）";
+
+      if (myLoansCache.length === 0) {
+        myLoansEl.innerHTML = "<li>貸出中の図書はありません。</li>";
+        return;
+      }
+
+      myLoansEl.innerHTML = myLoansCache
+        .map(function (h) {
+          const title = h.libraly_app && h.libraly_app.title ? h.libraly_app.title : "（不明）";
+          const due = h.due_date || "—";
+          return (
+            "<li><strong>" + escapeHtml(title) + "</strong><br>" +
+            "<span style=\"color:var(--muted);font-size:0.85rem;\">返却予定: " + escapeHtml(due) + "</span></li>"
+          );
+        })
+        .join("");
+    }
+
+    async function borrowScannedBook() {
+      if (!currentStudent || !scannedBook || scannedBook.onLoan || isBusy) return;
+
+      if (countActiveLoans(currentStudent.student_number) >= MAX_ACTIVE_LOANS) {
+        showMessage(
+          "あなたはすでに" + MAX_ACTIVE_LOANS + "冊借りています。返却してから再度お試しください。",
+          "error"
+        );
+        return;
+      }
+
+      const ok = window.confirm(
+        "「" + scannedBook.book.title + "」を借りますか？\n返却予定日は貸出日の14日後です。"
+      );
+      if (!ok) return;
+
+      isBusy = true;
+      borrowBtn.disabled = true;
+      const dates = getLendRecordDates();
+
+      try {
+        const { error } = await LibralyAuth.getClient().from(HISTORY_TABLE).insert({
+          book_id: scannedBook.book.id,
+          student_number: currentStudent.student_number,
+          is_returned: false,
+          created_at: dates.lentAt,
+          due_date: dates.dueDate,
+          lent_by_staff_id: null,
+          is_self_service: true,
+        });
+
+        if (error) {
+          console.error(error);
+          if (String(error.message || "").includes("is_self_service")) {
+            showMessage(
+              "DBマイグレーション（20260616_student_self_service.sql）を実行してください。",
+              "error"
+            );
+          } else {
+            showMessage("貸出の登録に失敗しました。", "error");
+          }
+          return;
+        }
+
+        showMessage("「" + scannedBook.book.title + "」を借りました。", "success");
+        clearBookPreview();
+        await loadMyLoans();
+      } finally {
+        isBusy = false;
+        if (scannedBook && !scannedBook.onLoan) {
+          borrowBtn.disabled = false;
+        }
+      }
+    }
+
+    async function startApp() {
+      currentStudent = await LibralyStudentAuth.getCurrentStudent();
+      if (!currentStudent) {
+        showAuthGate();
+        return;
+      }
+      showAppMain();
+      studentNameEl.textContent =
+        currentStudent.name + "（" + currentStudent.student_number + "）";
+      await loadMyLoans();
+    }
+
+    document.getElementById("auth-tab-login").addEventListener("click", function () {
+      setAuthTab("login");
+    });
+    document.getElementById("auth-tab-signup").addEventListener("click", function () {
+      setAuthTab("signup");
+    });
+
+    document.getElementById("login-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const studentNumber = document.getElementById("login-student-number").value.trim();
+      const password = document.getElementById("login-password").value;
+      if (!studentNumber || !LibralyAuth.validatePassword(password)) {
+        alert("学籍番号とパスワード（6文字以上）を入力してください。");
+        return;
+      }
+      const { error } = await LibralyStudentAuth.signInStudent({
+        student_number: studentNumber,
+        password: password,
+      });
+      if (error) {
+        alert(LibralyAuth.authErrorMessage(error));
+        return;
+      }
+      await startApp();
+    });
+
+    document.getElementById("signup-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const studentNumber = document.getElementById("signup-student-number").value.trim();
+      const birthDate = document.getElementById("signup-birth-date").value;
+      const password = document.getElementById("signup-password").value;
+      if (!studentNumber || !LibralyAuth.validatePassword(password)) {
+        alert("学籍番号とパスワード（6文字以上）を入力してください。");
+        return;
+      }
+      const result = await LibralyStudentAuth.signUpStudent({
+        student_number: studentNumber,
+        birth_date: birthDate,
+        password: password,
+      });
+      if (result.error) {
+        alert(result.error.message || LibralyAuth.authErrorMessage(result.error));
+        return;
+      }
+      await startApp();
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", function () {
+      stopScanner();
+      LibralyStudentAuth.studentSignOut();
+    });
+    scanStartBtn.addEventListener("click", startScanner);
+    scanStopBtn.addEventListener("click", stopScanner);
+    borrowBtn.addEventListener("click", borrowScannedBook);
+
+    (async function init() {
+      const session = await LibralyAuth.getSession();
+      if (!session || !LibralyStudentAuth.isStudentSession(session)) {
+        showAuthGate();
+        return;
+      }
+      await startApp();
+    })();
+  </script>
+</body>
+</html>

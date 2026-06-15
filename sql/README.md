@@ -23,6 +23,9 @@
 | 2 | `20260601_add_lending_return_dates.sql` | 返却予定日・返却日カラム追加（06 実行済み環境向け） |
 | 3 | `20260614_backfill_lending_due_date.sql` | **返却予定日未設定**の既存履歴を `created_at + 14日` で補完（再実行可） |
 | 4 | `20260615_add_sub_lend_fields.sql` | また貸し用列（`is_sub_lend`・実保持者等）を追加 |
+| 5 | `20260616_student_self_service.sql` | 学生セルフ貸出（`auth_user_id`・`is_self_service`） |
+
+**学生セルフ貸出を使う場合**は 5 を Supabase SQL Editor で実行し、必要なら `NOTIFY pgrst, 'reload schema';` を確認してください。
 
 ## テストデータ（貸し出し履歴 50 件）
 

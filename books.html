@@ -7,6 +7,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/book-qr.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/auth-bar.css" />
   <link rel="stylesheet" href="css/global-nav.css" />
@@ -386,6 +388,38 @@
       gap: 0.5rem;
     }
 
+    .qr-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(15, 23, 42, 0.45);
+    }
+
+    .qr-dialog.is-hidden { display: none; }
+
+    .qr-dialog__panel {
+      width: 100%;
+      max-width: 320px;
+      padding: 1.25rem;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .qr-dialog__panel h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .qr-dialog__canvas { margin: 0.75rem auto; }
+    .qr-dialog__payload {
+      font-size: 0.72rem;
+      color: var(--muted);
+      word-break: break-all;
+      margin: 0.5rem 0 0;
+    }
+
     .empty-state {
       text-align: center;
       color: var(--muted);
@@ -474,6 +508,16 @@
         <p class="loading">読み込み中…</p>
       </div>
     </section>
+  </div>
+
+  <div id="qr-dialog" class="qr-dialog is-hidden" role="dialog" aria-modal="true" aria-labelledby="qr-dialog-title" hidden>
+    <div class="qr-dialog__panel">
+      <h3 id="qr-dialog-title">図書 QR コード</h3>
+      <p id="qr-dialog-book-title" style="margin:0;font-size:0.9rem;"></p>
+      <canvas id="qr-dialog-canvas" class="qr-dialog__canvas" aria-label="図書QRコード"></canvas>
+      <p id="qr-dialog-payload" class="qr-dialog__payload"></p>
+      <button type="button" id="qr-dialog-close" class="btn btn-secondary" style="margin-top:0.75rem;">閉じる</button>
+    </div>
   </div>
 
   <script>
@@ -733,7 +777,8 @@
             '" class="btn btn-history">貸出履歴</a>' +
             (isInquiryMode
               ? ""
-              : '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
+              : '<button type="button" class="btn btn-secondary" data-action="qr">QRコード</button>' +
+                '<button type="button" class="btn btn-edit" data-action="edit">編集</button>' +
                 '<button type="button" class="btn btn-delete" data-action="delete">削除</button>') +
             "</div>" +
             "</article>"
@@ -872,9 +917,49 @@
         return;
       }
 
+      if (btn.dataset.action === "qr") {
+        openQrDialog(book);
+        return;
+      }
+
       if (btn.dataset.action === "delete") {
         await deleteBook(id, book.title);
       }
+    });
+
+    const listCategoryFilter = document.getElementById("list-category-filter");
+    const qrDialogEl = document.getElementById("qr-dialog");
+    const qrDialogTitleEl = document.getElementById("qr-dialog-book-title");
+    const qrDialogCanvasEl = document.getElementById("qr-dialog-canvas");
+    const qrDialogPayloadEl = document.getElementById("qr-dialog-payload");
+    const qrDialogCloseBtn = document.getElementById("qr-dialog-close");
+
+    function closeQrDialog() {
+      qrDialogEl.classList.add("is-hidden");
+      qrDialogEl.hidden = true;
+    }
+
+    function openQrDialog(book) {
+      const payload = LibralyBookQr.formatBookQrPayload(book.id);
+      qrDialogTitleEl.textContent = book.title;
+      qrDialogPayloadEl.textContent = payload;
+      qrDialogEl.classList.remove("is-hidden");
+      qrDialogEl.hidden = false;
+      if (typeof QRCode !== "undefined") {
+        QRCode.toCanvas(
+          qrDialogCanvasEl,
+          payload,
+          { width: 220, margin: 1 },
+          function (err) {
+            if (err) console.error(err);
+          }
+        );
+      }
+    }
+
+    qrDialogCloseBtn.addEventListener("click", closeQrDialog);
+    qrDialogEl.addEventListener("click", function (e) {
+      if (e.target === qrDialogEl) closeQrDialog();
     });
 
     function initPageLayout() {
