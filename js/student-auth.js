@@ -11,6 +11,9 @@
   }
 
   function isStudentSession(session) {
+    if (global.LibralyAuth && global.LibralyAuth.isStudentSession) {
+      return global.LibralyAuth.isStudentSession(session);
+    }
     if (!session || !session.user) return false;
     const meta = session.user.user_metadata || {};
     return meta.role === ROLE_STUDENT;

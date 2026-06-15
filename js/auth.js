@@ -199,10 +199,20 @@
     return data.session || null;
   }
 
+  function isStudentSession(session) {
+    if (!session || !session.user) return false;
+    const meta = session.user.user_metadata || {};
+    return meta.role === "student";
+  }
+
   async function requireAuth() {
     const session = await getSession();
     if (!session) {
       global.location.replace(HOME_PAGE);
+      return null;
+    }
+    if (isStudentSession(session)) {
+      global.location.replace("student-borrow.html");
       return null;
     }
     return session;
@@ -276,6 +286,7 @@
     getClient,
     getSession,
     requireAuth,
+    isStudentSession,
     renderUserBar,
     signOut,
     getCurrentStaff,

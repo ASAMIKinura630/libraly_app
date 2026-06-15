@@ -2811,6 +2811,11 @@
         alert(LibralyAuth.authErrorMessage(error));
         return;
       }
+      const session = await LibralyAuth.getSession();
+      if (session && LibralyAuth.isStudentSession(session)) {
+        window.location.replace("student-borrow.html");
+        return;
+      }
       await startApp();
     });
 
@@ -2890,6 +2895,10 @@
       const session = await LibralyAuth.getSession();
       if (!session) {
         showAuthGate();
+        return;
+      }
+      if (LibralyAuth.isStudentSession(session)) {
+        window.location.replace("student-borrow.html");
         return;
       }
       await startApp();

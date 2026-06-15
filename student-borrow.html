@@ -26,11 +26,6 @@
       margin: 0 auto;
       padding: 1rem 1rem 2.5rem;
     }
-    .top-link {
-      margin-bottom: 0.75rem;
-      font-size: 0.85rem;
-    }
-    .top-link a { color: var(--accent); font-weight: 600; }
     .header h1 { margin: 0; font-size: 1.45rem; }
     .header p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.92rem; }
     .card {
@@ -141,8 +136,6 @@
 </head>
 <body>
   <div class="app">
-    <p class="top-link"><a href="index.html">職員の方はこちら（貸出・返却・マスタ保守）</a></p>
-
     <section id="auth-gate">
       <header class="header">
         <h1>学生セルフ貸出</h1>
@@ -190,6 +183,11 @@
     </section>
 
     <div id="app-main" class="is-hidden" hidden>
+      <header class="header" style="margin-bottom:1rem;">
+        <h1>学生セルフ貸出</h1>
+        <p>図書の QR コードを読み取って借ります</p>
+      </header>
+
       <div id="message" class="message" role="status" aria-live="polite"></div>
 
       <div class="student-bar">
@@ -588,6 +586,10 @@
 
     (async function init() {
       const session = await LibralyAuth.getSession();
+      if (session && !LibralyStudentAuth.isStudentSession(session)) {
+        window.location.replace("index.html");
+        return;
+      }
       if (!session || !LibralyStudentAuth.isStudentSession(session)) {
         showAuthGate();
         return;
