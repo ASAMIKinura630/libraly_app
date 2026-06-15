@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/voice-input.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/auth-bar.css" />
   <link rel="stylesheet" href="css/global-nav.css" />
@@ -295,7 +296,8 @@
 
     .list-toolbar select,
     .list-toolbar input,
-    .search-panel input {
+    .search-panel input,
+    .lend-panel input[type="search"] {
       width: 100%;
       min-height: 44px;
       padding: 0.5rem 0.75rem;
@@ -306,10 +308,120 @@
       background: #fff;
     }
 
-    .search-panel input:focus {
+    .search-panel input:focus,
+    .lend-panel input[type="search"]:focus {
       outline: 2px solid var(--accent);
       outline-offset: 1px;
       border-color: var(--accent);
+    }
+
+    .input-with-voice {
+      display: flex;
+      gap: 0.35rem;
+      align-items: stretch;
+    }
+
+    .input-with-voice input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-voice {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0.35rem 0.5rem;
+      font-size: 1.1rem;
+      line-height: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-alt);
+      cursor: pointer;
+    }
+
+    .btn-voice:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .btn-voice.is-listening {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 2px var(--accent-ring);
+    }
+
+    .btn-voice:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .lend-picker-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .lend-picker {
+      max-height: 11rem;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .lend-picker-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+
+    .lend-picker-item:last-child {
+      border-bottom: none;
+    }
+
+    .lend-picker-item:hover:not(:disabled) {
+      background: var(--panel-alt);
+    }
+
+    .lend-picker-item.is-selected {
+      background: var(--accent-soft);
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .lend-picker-item:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .lend-picker-empty {
+      margin: 0;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .lend-picker-selected {
+      margin: 0.35rem 0 0;
+      font-size: 0.88rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .lend-picker-selected:empty {
+      display: none;
     }
 
     .list-toolbar--status {
@@ -818,7 +930,7 @@
     <section class="card" aria-labelledby="lend-heading">
       <div class="card-header">
         <h2 id="lend-heading">貸出登録</h2>
-        <p class="card-header__hint">条件を選択して図書と学生を指定してください</p>
+        <p class="card-header__hint">検索して候補から図書と学生を選んでください</p>
         <p id="operator-hint" class="card-header__hint"></p>
       </div>
 
@@ -833,11 +945,27 @@
                   <option value="">すべて</option>
                 </select>
               </div>
+              <div class="search-panel__fields search-panel__fields--book">
+                <div class="form-group">
+                  <label for="lend-book-title">図書名</label>
+                  <div class="input-with-voice">
+                    <input type="search" id="lend-book-title" placeholder="部分一致" autocomplete="off" aria-label="図書名で検索" />
+                    <button type="button" class="btn-voice" data-voice-for="lend-book-title" aria-label="図書名を音声入力" title="音声入力">🎤</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="lend-book-author">著者</label>
+                  <div class="input-with-voice">
+                    <input type="search" id="lend-book-author" placeholder="部分一致" autocomplete="off" aria-label="著者で検索" />
+                    <button type="button" class="btn-voice" data-voice-for="lend-book-author" aria-label="著者を音声入力" title="音声入力">🎤</button>
+                  </div>
+                </div>
+              </div>
               <div class="form-group">
-                <label for="book-id">図書 <span aria-hidden="true">*</span></label>
-                <select id="book-id" name="book_id" required>
-                  <option value="">選択してください</option>
-                </select>
+                <span class="lend-picker-label" id="lend-book-picker-label">候補から選択 <span aria-hidden="true">*</span></span>
+                <div id="lend-book-picker" class="lend-picker" role="listbox" aria-labelledby="lend-book-picker-label"></div>
+                <input type="hidden" id="book-id" name="book_id" value="" required />
+                <p id="lend-book-selected" class="lend-picker-selected" aria-live="polite"></p>
               </div>
             </div>
             <span class="form-hint">貸出中の図書は選択できません。先に返却してください。</span>
@@ -858,11 +986,27 @@
                   <option value="">すべて</option>
                 </select>
               </div>
+              <div class="search-panel__fields">
+                <div class="form-group">
+                  <label for="lend-student-name">氏名</label>
+                  <div class="input-with-voice">
+                    <input type="search" id="lend-student-name" placeholder="部分一致" autocomplete="off" aria-label="氏名で検索" />
+                    <button type="button" class="btn-voice" data-voice-for="lend-student-name" aria-label="氏名を音声入力" title="音声入力">🎤</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="lend-student-number-query">学籍番号</label>
+                  <div class="input-with-voice">
+                    <input type="search" id="lend-student-number-query" placeholder="部分一致" autocomplete="off" aria-label="学籍番号で検索" />
+                    <button type="button" class="btn-voice" data-voice-for="lend-student-number-query" aria-label="学籍番号を音声入力" title="音声入力">🎤</button>
+                  </div>
+                </div>
+              </div>
               <div class="form-group">
-                <label for="student-number">学生 <span aria-hidden="true">*</span></label>
-                <select id="student-number" name="student_number" required>
-                  <option value="">選択してください</option>
-                </select>
+                <span class="lend-picker-label" id="lend-student-picker-label">候補から選択 <span aria-hidden="true">*</span></span>
+                <div id="lend-student-picker" class="lend-picker" role="listbox" aria-labelledby="lend-student-picker-label"></div>
+                <input type="hidden" id="student-number" name="student_number" value="" required />
+                <p id="lend-student-selected" class="lend-picker-selected" aria-live="polite"></p>
               </div>
             </div>
             <span class="form-hint">公式借り手・実保持者（また貸し）の両方を含め、1人の学生が同時に借りられる図書は5冊まで</span>
@@ -991,6 +1135,12 @@
     let bookCategoryFilter = "";
     let lendFacultyFilter = "";
     let lendDepartmentFilter = "";
+    let lendBookTitleQuery = "";
+    let lendBookAuthorQuery = "";
+    let lendStudentNameQuery = "";
+    let lendStudentNumberQuery = "";
+    let selectedBookId = "";
+    let selectedStudentNumber = "";
     let currentStaff = null;
     let subLendTargetId = null;
     let subLendOfficialStudentNumber = "";
@@ -1001,10 +1151,18 @@
     const operatorHintEl = document.getElementById("operator-hint");
     const lendForm = document.getElementById("lend-form");
     const bookCategoryFilterEl = document.getElementById("book-category-filter");
-    const bookSelect = document.getElementById("book-id");
+    const lendBookTitleInput = document.getElementById("lend-book-title");
+    const lendBookAuthorInput = document.getElementById("lend-book-author");
+    const lendBookPickerEl = document.getElementById("lend-book-picker");
+    const bookIdInput = document.getElementById("book-id");
+    const lendBookSelectedEl = document.getElementById("lend-book-selected");
     const lendFacultyFilterEl = document.getElementById("lend-faculty-filter");
     const lendDepartmentFilterEl = document.getElementById("lend-department-filter");
-    const studentSelect = document.getElementById("student-number");
+    const lendStudentNameInput = document.getElementById("lend-student-name");
+    const lendStudentNumberQueryInput = document.getElementById("lend-student-number-query");
+    const lendStudentPickerEl = document.getElementById("lend-student-picker");
+    const studentNumberInput = document.getElementById("student-number");
+    const lendStudentSelectedEl = document.getElementById("lend-student-selected");
     const lendBtn = document.getElementById("lend-btn");
     const statusFilterEl = document.getElementById("status-filter");
     const searchBookTitleInput = document.getElementById("search-book-title");
@@ -1377,25 +1535,222 @@
     }
 
     function populateBookSelect() {
+      renderLendBookPicker();
+    }
+
+    function populateStudentSelect() {
+      renderLendStudentPicker();
+    }
+
+    function readLendSearchQueries() {
+      lendBookTitleQuery = lendBookTitleInput.value.trim();
+      lendBookAuthorQuery = lendBookAuthorInput.value.trim();
+      lendStudentNameQuery = lendStudentNameInput.value.trim();
+      lendStudentNumberQuery = lendStudentNumberQueryInput.value.trim();
+    }
+
+    function getLendBookCandidates() {
       const activeIds = getActiveLoanBookIds();
-      const current = bookSelect.value;
-      const books = getBooksForLendSelect();
-      bookSelect.innerHTML = '<option value="">選択してください</option>';
-
-      books.forEach(function (b) {
-        const opt = document.createElement("option");
-        opt.value = b.id;
-        const onLoan = !!activeIds[b.id];
-        opt.textContent = formatBookSelectLabel(b, onLoan);
-        opt.disabled = onLoan;
-        bookSelect.appendChild(opt);
+      return getBooksForLendSelect().filter(function (b) {
+        return (
+          matchesSearchField(b.title, lendBookTitleQuery) &&
+          matchesSearchField(b.name, lendBookAuthorQuery)
+        );
+      }).map(function (b) {
+        return { book: b, onLoan: !!activeIds[b.id] };
       });
+    }
 
-      if (current && bookSelect.querySelector('option[value="' + current + '"]:not([disabled])')) {
-        bookSelect.value = current;
-      } else {
-        bookSelect.value = "";
+    function getLendStudentCandidates() {
+      return getStudentsForLendSelect().filter(function (s) {
+        return (
+          matchesSearchField(s.name, lendStudentNameQuery) &&
+          matchesSearchField(s.student_number, lendStudentNumberQuery)
+        );
+      });
+    }
+
+    function updateLendBookSelectionDisplay() {
+      if (!selectedBookId) {
+        bookIdInput.value = "";
+        lendBookSelectedEl.textContent = "";
+        return;
       }
+      const book = booksCache.find(function (b) {
+        return b.id === selectedBookId;
+      });
+      if (!book) {
+        selectedBookId = "";
+        bookIdInput.value = "";
+        lendBookSelectedEl.textContent = "";
+        return;
+      }
+      const activeIds = getActiveLoanBookIds();
+      const onLoan = !!activeIds[book.id];
+      bookIdInput.value = onLoan ? "" : selectedBookId;
+      lendBookSelectedEl.textContent = onLoan
+        ? ""
+        : "選択中: " + formatBookSelectLabel(book, false);
+    }
+
+    function updateLendStudentSelectionDisplay() {
+      if (!selectedStudentNumber) {
+        studentNumberInput.value = "";
+        lendStudentSelectedEl.textContent = "";
+        return;
+      }
+      const student = studentsCache.find(function (s) {
+        return s.student_number === selectedStudentNumber;
+      });
+      if (!student) {
+        selectedStudentNumber = "";
+        studentNumberInput.value = "";
+        lendStudentSelectedEl.textContent = "";
+        return;
+      }
+      studentNumberInput.value = selectedStudentNumber;
+      lendStudentSelectedEl.textContent =
+        "選択中: " + formatStudentSelectLabel(student);
+    }
+
+    function renderLendBookPicker() {
+      readLendSearchQueries();
+      const candidates = getLendBookCandidates();
+      const maxShow = 80;
+
+      if (candidates.length === 0) {
+        lendBookPickerEl.innerHTML =
+          '<p class="lend-picker-empty">候補がありません。カテゴリや検索条件を変えてください。</p>';
+        selectedBookId = "";
+        updateLendBookSelectionDisplay();
+        return;
+      }
+
+      let html = "";
+      const slice = candidates.slice(0, maxShow);
+      slice.forEach(function (item) {
+        const b = item.book;
+        const label = formatBookSelectLabel(b, item.onLoan);
+        const isSelected = selectedBookId === b.id;
+        html +=
+          '<button type="button" class="lend-picker-item' +
+          (isSelected ? " is-selected" : "") +
+          '" role="option" data-book-id="' +
+          escapeHtml(b.id) +
+          '" aria-selected="' +
+          (isSelected ? "true" : "false") +
+          '"' +
+          (item.onLoan ? " disabled" : "") +
+          ">" +
+          escapeHtml(label) +
+          "</button>";
+      });
+      if (candidates.length > maxShow) {
+        html +=
+          '<p class="lend-picker-empty">他 ' +
+          (candidates.length - maxShow) +
+          " 件。検索で絞り込んでください。</p>";
+      }
+      lendBookPickerEl.innerHTML = html;
+
+      if (selectedBookId) {
+        const activeIds = getActiveLoanBookIds();
+        const inList = candidates.some(function (item) {
+          return item.book.id === selectedBookId && !item.onLoan;
+        });
+        if (!inList || activeIds[selectedBookId]) {
+          selectedBookId = "";
+        }
+      }
+      updateLendBookSelectionDisplay();
+    }
+
+    function renderLendStudentPicker() {
+      readLendSearchQueries();
+      const candidates = getLendStudentCandidates();
+      const maxShow = 80;
+
+      if (candidates.length === 0) {
+        lendStudentPickerEl.innerHTML =
+          '<p class="lend-picker-empty">候補がありません。学部・学科や検索条件を変えてください。</p>';
+        if (
+          selectedStudentNumber &&
+          !candidates.some(function (s) {
+            return s.student_number === selectedStudentNumber;
+          })
+        ) {
+          selectedStudentNumber = "";
+        }
+        updateLendStudentSelectionDisplay();
+        return;
+      }
+
+      let html = "";
+      const slice = candidates.slice(0, maxShow);
+      slice.forEach(function (s) {
+        const isSelected = selectedStudentNumber === s.student_number;
+        html +=
+          '<button type="button" class="lend-picker-item' +
+          (isSelected ? " is-selected" : "") +
+          '" role="option" data-student-number="' +
+          escapeHtml(s.student_number) +
+          '" aria-selected="' +
+          (isSelected ? "true" : "false") +
+          '">' +
+          escapeHtml(formatStudentSelectLabel(s)) +
+          "</button>";
+      });
+      if (candidates.length > maxShow) {
+        html +=
+          '<p class="lend-picker-empty">他 ' +
+          (candidates.length - maxShow) +
+          " 件。検索で絞り込んでください。</p>";
+      }
+      lendStudentPickerEl.innerHTML = html;
+
+      if (
+        selectedStudentNumber &&
+        !candidates.some(function (s) {
+          return s.student_number === selectedStudentNumber;
+        })
+      ) {
+        selectedStudentNumber = "";
+      }
+      updateLendStudentSelectionDisplay();
+    }
+
+    function selectLendBook(bookId) {
+      selectedBookId = bookId;
+      renderLendBookPicker();
+    }
+
+    function selectLendStudent(studentNumber) {
+      selectedStudentNumber = studentNumber;
+      renderLendStudentPicker();
+    }
+
+    function clearLendFormSelections() {
+      selectedBookId = "";
+      selectedStudentNumber = "";
+      lendBookTitleInput.value = "";
+      lendBookAuthorInput.value = "";
+      lendStudentNameInput.value = "";
+      lendStudentNumberQueryInput.value = "";
+      lendBookTitleQuery = "";
+      lendBookAuthorQuery = "";
+      lendStudentNameQuery = "";
+      lendStudentNumberQuery = "";
+      renderLendBookPicker();
+      renderLendStudentPicker();
+    }
+
+      selectedStudentNumber = "";
+      renderLendStudentPicker();
+    }
+
+    function onLendBookSearchInputChange() {
+      selectedBookId = "";
+      renderLendBookPicker();
     }
 
     function getStudentFacultyName(student) {
@@ -1422,25 +1777,6 @@
         label += "（" + (faculty || department) + "）";
       }
       return label;
-    }
-
-    function populateStudentSelect() {
-      const current = studentSelect.value;
-      const students = getStudentsForLendSelect();
-      studentSelect.innerHTML = '<option value="">選択してください</option>';
-
-      students.forEach(function (s) {
-        const opt = document.createElement("option");
-        opt.value = s.student_number;
-        opt.textContent = formatStudentSelectLabel(s);
-        studentSelect.appendChild(opt);
-      });
-
-      if (current && studentSelect.querySelector('option[value="' + current + '"]')) {
-        studentSelect.value = current;
-      } else {
-        studentSelect.value = "";
-      }
     }
 
     function getBookTitle(record) {
@@ -2197,11 +2533,11 @@
         return;
       }
 
-      const bookId = bookSelect.value;
-      const studentNumber = studentSelect.value;
+      const bookId = bookIdInput.value;
+      const studentNumber = studentNumberInput.value;
 
       if (!bookId || !studentNumber) {
-        showMessage("図書と学生を選択してください。", "warn");
+        showMessage("図書と学生を候補から選択してください。", "warn");
         return;
       }
 
@@ -2240,7 +2576,7 @@
           return;
         }
 
-        lendForm.reset();
+        clearLendFormSelections();
         showMessage("貸出を登録しました。", "success");
         await loadHistory();
       } finally {
@@ -2301,19 +2637,39 @@
 
     bookCategoryFilterEl.addEventListener("change", function () {
       bookCategoryFilter = bookCategoryFilterEl.value;
+      selectedBookId = "";
       populateBookSelect();
     });
 
     lendFacultyFilterEl.addEventListener("change", function () {
       lendFacultyFilter = lendFacultyFilterEl.value;
       lendDepartmentFilter = "";
+      selectedStudentNumber = "";
       populateLendDepartmentFilter();
       populateStudentSelect();
     });
 
     lendDepartmentFilterEl.addEventListener("change", function () {
       lendDepartmentFilter = lendDepartmentFilterEl.value;
+      selectedStudentNumber = "";
       populateStudentSelect();
+    });
+
+    lendBookTitleInput.addEventListener("input", onLendBookSearchInputChange);
+    lendBookAuthorInput.addEventListener("input", onLendBookSearchInputChange);
+    lendStudentNameInput.addEventListener("input", onLendStudentSearchInputChange);
+    lendStudentNumberQueryInput.addEventListener("input", onLendStudentSearchInputChange);
+
+    lendBookPickerEl.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-book-id]");
+      if (!btn || btn.disabled) return;
+      selectLendBook(btn.getAttribute("data-book-id"));
+    });
+
+    lendStudentPickerEl.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-student-number]");
+      if (!btn) return;
+      selectLendStudent(btn.getAttribute("data-student-number"));
     });
 
     function onSearchInputChange() {
@@ -2504,6 +2860,7 @@
       ]);
       populateStudentSelect();
       if (booksOk) populateBookSelect();
+      LibralyVoiceInput.initAll(lendForm);
 
       if (!booksOk || !studentsOk) {
         historyListEl.innerHTML =

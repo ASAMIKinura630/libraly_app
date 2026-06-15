@@ -50,15 +50,27 @@
                 <section class="mock-lend-panel mock-lend-panel--book">
                   <h3 class="mock-lend-panel__title">図書を指定</h3>
                   <div class="mock-form-group">
-                    <label>図書</label>
-                    <select><option>プログラミング入門</option></select>
+                    <label>図書名</label>
+                    <input type="search" value="1Q84" readonly style="width:100%;min-height:36px;padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:8px;" />
+                  </div>
+                  <div class="mock-form-group" style="margin-top:0.5rem;">
+                    <label>候補から選択</label>
+                    <div style="border:1px solid var(--border);border-radius:8px;background:#fff;font-size:0.82rem;">
+                      <div style="padding:0.45rem 0.65rem;background:var(--accent-soft);font-weight:600;color:var(--accent);">1Q84（文学）（村上春樹）</div>
+                    </div>
                   </div>
                 </section>
                 <section class="mock-lend-panel mock-lend-panel--student">
                   <h3 class="mock-lend-panel__title">学生を指定</h3>
                   <div class="mock-form-group">
-                    <label>学生</label>
-                    <select><option>20240001 山田 太郎</option></select>
+                    <label>氏名</label>
+                    <input type="search" value="山田" readonly style="width:100%;min-height:36px;padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:8px;" />
+                  </div>
+                  <div class="mock-form-group" style="margin-top:0.5rem;">
+                    <label>候補から選択</label>
+                    <div style="border:1px solid var(--border);border-radius:8px;background:#fff;font-size:0.82rem;">
+                      <div style="padding:0.45rem 0.65rem;background:var(--accent-soft);font-weight:600;color:var(--accent);">20240001 — 山田 太郎（工学 / 情報）</div>
+                    </div>
                   </div>
                 </section>
               </div>
@@ -121,7 +133,7 @@
         <h2>説明ポイント</h2>
         <ul>
           <li>日常業務の<strong>メイン画面</strong>です。</li>
-          <li>図書と学生を選んで「貸出する」で登録（同時5冊まで、公式借り手・実保持者の両方をカウント）。</li>
+          <li>図書名・著者、氏名・学籍番号で<strong>検索→候補から選択</strong>して「貸出する」（🎤音声入力対応）。</li>
           <li>貸出中の行から「返却」で返却処理します。</li>
           <li>「また貸し」で実保持者（B）を記録。公式借り手（A）は変更しません。</li>
           <li>状態は<strong>●と凡例</strong>で表示（貸出中・また貸し・期限間近・延滞・返却済み）。</li>
