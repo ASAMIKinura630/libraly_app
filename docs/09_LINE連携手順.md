@@ -149,7 +149,7 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 
 1. 公式 LINE を友だち追加
 2. リッチメニュー「本を借りる」
-3. 「LINE アカウントと学籍番号の紐づけ」画面
+3. 「学籍番号と LINE を紐づけ」画面
 4. 学籍番号・生年月日（YYYYMMDD）を入力
 5. 紐づけ成功 → QR スキャン貸出画面
 
