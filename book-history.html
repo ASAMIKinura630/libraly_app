@@ -7,6 +7,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/book-qr.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/auth-bar.css" />
   <link rel="stylesheet" href="css/global-nav.css" />
@@ -121,6 +123,83 @@
       white-space: pre-wrap;
       word-break: break-word;
       font-size: 0.95rem;
+    }
+
+    .book-qr {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .book-qr__title {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .book-qr__hint {
+      margin: 0 0 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .book-qr__canvas {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .book-qr__payload {
+      margin: 0.5rem 0 0.75rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      word-break: break-all;
+    }
+
+    .book-qr__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0.45rem 1rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #book-qr-print-area,
+      #book-qr-print-area * {
+        visibility: visible;
+      }
+
+      #book-qr-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 1rem;
+      }
     }
 
     .category-label {
@@ -313,6 +392,45 @@
       return "—";
     }
 
+    function renderBookQr(book) {
+      if (fromInquiry) return;
+
+      const payload = LibralyBookQr.formatBookQrPayload(book.id);
+      const qrHtml =
+        '<div class="book-qr" id="book-qr-print-area">' +
+        '<h3 class="book-qr__title">貸出用 QR コード</h3>' +
+        '<p class="book-qr__hint">本に貼付して、学生セルフ貸出（student-borrow.html）で利用します。</p>' +
+        '<canvas id="book-qr-canvas" class="book-qr__canvas" aria-label="図書QRコード"></canvas>' +
+        '<p id="book-qr-payload" class="book-qr__payload">' +
+        escapeHtml(payload) +
+        "</p>" +
+        '<div class="book-qr__actions">' +
+        '<button type="button" id="book-qr-print-btn" class="btn btn-secondary">QR を印刷</button>' +
+        "</div>" +
+        "</div>";
+
+      bookSummaryEl.insertAdjacentHTML("beforeend", qrHtml);
+
+      const canvasEl = document.getElementById("book-qr-canvas");
+      if (typeof QRCode !== "undefined" && canvasEl) {
+        QRCode.toCanvas(
+          canvasEl,
+          payload,
+          { width: 200, margin: 1 },
+          function (err) {
+            if (err) console.error(err);
+          }
+        );
+      }
+
+      const printBtn = document.getElementById("book-qr-print-btn");
+      if (printBtn) {
+        printBtn.addEventListener("click", function () {
+          window.print();
+        });
+      }
+    }
+
     function renderBookSummary(book) {
       const categoryName = getCategoryName(book);
       const categoryHtml = categoryName
@@ -335,6 +453,8 @@
         '<p class="book-summary__content"><span class="book-summary__label">あらすじ</span><br>' +
         escapeHtml(book.content) +
         "</p>";
+
+      renderBookQr(book);
 
       document.title =
         book.title +
