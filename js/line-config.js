@@ -4,8 +4,8 @@
  */
 (function (global) {
   global.LibralyLineConfig = {
-    /** LIFF アプリの ID（例: 1234567890-AbCdEfGh）— LINE Developers の LIFF タブで確認 */
-    LIFF_ID: "",
+    /** LIFF アプリの ID — LINE Developers の LIFF タブで確認 */
+    LIFF_ID: "2010403811-I1HtymKS",
 
     /** 未設定のとき false。LIFF_ID を入れると有効化 */
     isConfigured: function () {
