@@ -1,0 +1,10 @@
+# Supabase CLI — libraly_app
+# https://supabase.com/docs/guides/cli/config
+
+project_id = "bpfytlurmubgmzaisonp"
+
+[api]
+enabled = true
+
+[db]
+major_version = 17

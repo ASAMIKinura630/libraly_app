@@ -165,6 +165,8 @@
         <p class="line-hint" style="margin:0;">LINE でログインしています…</p>
       </div>
 
+      <div id="line-init-error" class="message message--error is-hidden" hidden role="alert"></div>
+
       <div id="line-link-panel" class="card is-hidden" hidden>
         <span class="line-badge">LINE 初回設定</span>
         <h2 style="margin:0 0 0.5rem;font-size:1.05rem;">学籍番号と LINE を紐づけ</h2>
@@ -595,6 +597,20 @@
       el.hidden = !show;
     }
 
+    function showLineInitError(message) {
+      const el = document.getElementById("line-init-error");
+      if (!message) {
+        el.classList.add("is-hidden");
+        el.hidden = true;
+        el.textContent = "";
+        return;
+      }
+      el.textContent = message;
+      el.classList.remove("is-hidden");
+      el.hidden = false;
+      el.classList.add("is-visible");
+    }
+
     async function startAppWithStudent(student) {
       currentStudent = student;
       showAppMain();
@@ -624,11 +640,16 @@
       showAuthGate();
       showLineBrowserHint(false);
       showLineLinkPanel(false);
+      showLineInitError("");
       showLineLoading(true);
 
       const ready = await LibralyLineLiff.initLiff();
       if (!ready) {
         showLineLoading(false);
+        const err = LibralyLineLiff.getLastInitError();
+        if (err) {
+          showLineInitError(LibralyLineLiff.formatLiffError(err));
+        }
         return false;
       }
 
@@ -639,13 +660,23 @@
       }
 
       const loggedIn = await LibralyLineLiff.ensureLoggedIn();
-      if (!loggedIn) return true;
+      if (!loggedIn) {
+        const err = LibralyLineLiff.getLastInitError();
+        if (err) {
+          showLineLoading(false);
+          showLineInitError(LibralyLineLiff.formatLiffError(err));
+          return true;
+        }
+        return true;
+      }
 
       const loginResult = await LibralyLineLiff.loginWithLine();
       showLineLoading(false);
 
       if (loginResult.error) {
-        alert(loginResult.error.message);
+        if (!loginResult.pending_redirect) {
+          showLineInitError(loginResult.error.message);
+        }
         return true;
       }
 
@@ -737,7 +768,9 @@
         birth_date: birthDate,
       });
       if (result.error) {
-        alert(result.error.message);
+        if (!result.pending_redirect) {
+          showLineInitError(result.error.message);
+        }
         return;
       }
       showLineLinkPanel(false);

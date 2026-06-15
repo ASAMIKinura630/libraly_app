@@ -8,6 +8,7 @@
 
   let liffReady = false;
   let cachedProfile = null;
+  let lastInitError = null;
 
   function getConfig() {
     return global.LibralyLineConfig || { LIFF_ID: "", isConfigured: function () { return false; } };
@@ -30,6 +31,35 @@
   function isConfigured() {
     const cfg = getConfig();
     return cfg.isConfigured && cfg.isConfigured();
+  }
+
+  function getRedirectUri() {
+    const cfg = getConfig();
+    const configured = String(cfg.ENDPOINT_URL || "").trim();
+    if (configured) return configured;
+    return window.location.origin + window.location.pathname;
+  }
+
+  function formatLiffError(err) {
+    if (!err) return "LIFF の初期化に失敗しました。";
+    const code = err.code ? String(err.code) : "";
+    const message = err.message ? String(err.message) : "";
+    if (code === "INIT_FAILED" || /endpoint/i.test(message)) {
+      return (
+        "LIFF の Endpoint URL が一致していない可能性があります。\n" +
+        "LINE Developers の Endpoint を次と完全一致させてください:\n" +
+        getRedirectUri()
+      );
+    }
+    if (message && message !== "Unknown error") {
+      return "LIFF エラー: " + message + (code ? " (" + code + ")" : "");
+    }
+    return (
+      "LIFF の初期化に失敗しました（不明なエラー）。\n" +
+      "リッチメニューは https://liff.line.me/" +
+      getConfig().LIFF_ID +
+      " の形式で設定してください。"
+    );
   }
 
   function isInLineClient() {
@@ -78,20 +108,26 @@
   }
 
   async function initLiff() {
+    lastInitError = null;
     if (!isConfigured()) return false;
     if (!global.liff) {
-      console.warn("LIFF SDK が読み込まれていません。");
+      lastInitError = { message: "LIFF SDK が読み込まれていません。" };
+      console.warn(lastInitError.message);
       return false;
     }
     const cfg = getConfig();
     try {
-      await global.liff.init({ liffId: cfg.LIFF_ID.trim() });
+      await global.liff.init({
+        liffId: cfg.LIFF_ID.trim(),
+        withLoginOnExternalBrowser: true,
+      });
       liffReady = true;
       if (global.liff.isLoggedIn()) {
         cachedProfile = await global.liff.getProfile();
       }
       return true;
     } catch (err) {
+      lastInitError = err;
       console.error(err);
       return false;
     }
@@ -100,13 +136,75 @@
   async function ensureLoggedIn() {
     if (!liffReady || !global.liff) return false;
     if (global.liff.isLoggedIn()) return true;
-    global.liff.login({ redirectUri: window.location.href.split("#")[0] });
+    try {
+      sessionStorage.removeItem("libraly_line_scope_retry");
+      global.liff.login({ redirectUri: getRedirectUri() });
+    } catch (err) {
+      lastInitError = err;
+      console.error(err);
+      return false;
+    }
     return false;
   }
 
+  function idTokenErrorMessage() {
+    const loggedIn =
+      liffReady && global.liff && global.liff.isLoggedIn();
+    if (loggedIn) {
+      return (
+        "LINE の ID トークンを取得できませんでした。\n" +
+        "LINE Developers → LIFF → 対象アプリの Scope で「openid」にチェックを入れ、保存後にもう一度「本を借りる」を開いてください。"
+      );
+    }
+    return "LINE にログインできませんでした。もう一度「本を借りる」から開いてください。";
+  }
+
+  async function ensureIdToken() {
+    if (!liffReady || !global.liff || !global.liff.isLoggedIn()) {
+      return null;
+    }
+
+    const token = global.liff.getIDToken();
+    if (token) {
+      try {
+        sessionStorage.removeItem("libraly_line_scope_retry");
+      } catch (e) {
+        console.warn(e);
+      }
+      return token;
+    }
+
+    // ログイン済みなのに ID トークンが無い = openid 未付与の古いセッションのことが多い
+    const retryKey = "libraly_line_scope_retry";
+    let retried = false;
+    try {
+      retried = sessionStorage.getItem(retryKey) === "1";
+    } catch (e) {
+      console.warn(e);
+    }
+
+    if (!retried) {
+      try {
+        sessionStorage.setItem(retryKey, "1");
+        global.liff.logout();
+        global.liff.login({ redirectUri: getRedirectUri() });
+      } catch (err) {
+        lastInitError = err;
+        console.error(err);
+        try {
+          sessionStorage.removeItem(retryKey);
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      return null;
+    }
+
+    return null;
+  }
+
   async function getIdToken() {
-    if (!liffReady || !global.liff || !global.liff.isLoggedIn()) return null;
-    return global.liff.getIDToken();
+    return ensureIdToken();
   }
 
   async function callLineAuth(body) {
@@ -138,9 +236,9 @@
   }
 
   async function loginWithLine() {
-    const idToken = await getIdToken();
+    const idToken = await ensureIdToken();
     if (!idToken) {
-      return { error: { message: "LINE の ID トークンを取得できませんでした。" } };
+      return { error: { message: idTokenErrorMessage() }, pending_redirect: true };
     }
 
     const result = await callLineAuth({
@@ -160,9 +258,9 @@
   }
 
   async function linkStudent({ student_number, birth_date }) {
-    const idToken = await getIdToken();
+    const idToken = await ensureIdToken();
     if (!idToken) {
-      return { error: { message: "LINE の ID トークンを取得できませんでした。" } };
+      return { error: { message: idTokenErrorMessage() }, pending_redirect: true };
     }
 
     const result = await callLineAuth({
@@ -211,6 +309,11 @@
     isConfigured: isConfigured,
     isInLineClient: isInLineClient,
     initLiff: initLiff,
+    getLastInitError: function () {
+      return lastInitError;
+    },
+    formatLiffError: formatLiffError,
+    getRedirectUri: getRedirectUri,
     ensureLoggedIn: ensureLoggedIn,
     loginWithLine: loginWithLine,
     linkStudent: linkStudent,

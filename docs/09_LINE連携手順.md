@@ -1,5 +1,7 @@
 # 公式 LINE 連携手順（学生セルフ貸出）
 
+> **汎用マニュアル（新規プロジェクト用）:** [`10_Supabase×公式LINE連携バイブル.md`](./10_Supabase×公式LINE連携バイブル.md)
+
 図書館保守システムの学生向け貸出を、**公式 LINE の LIFF** から開き、LINE アカウントでログインするための設定手順です。
 
 **Phase 1 のゴール**
@@ -63,7 +65,7 @@ sql/20260617_add_line_user_id.sql
 | LIFF app name | `図書館セルフ貸出`（任意） |
 | Size | **Full**（推奨） |
 | Endpoint URL | `https://asamikinura630.github.io/libraly_app/student-borrow.html` |
-| Scope | **profile** にチェック（`openid` は通常自動） |
+| Scope | **profile** と **openid** の両方にチェック（openid が無いと ID トークンが取れません） |
 | Bot link feature | **On（Aggressive）** 推奨 — 友だち未追加時に誘導 |
 
 3. 作成後、**LIFF ID**（例: `1234567890-AbCdEfGh`）をコピー
@@ -166,8 +168,10 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 
 | 症状 | 確認すること |
 |------|----------------|
+| **「不明なエラー」**（LINE のダイアログ） | ① リッチメニューは **`https://liff.line.me/<LIFF_ID>`** にする（GitHub Pages URL を直接指定しない） ② LINE Developers の **Endpoint URL** が `https://asamikinura630.github.io/libraly_app/student-borrow.html` と **完全一致** ③ `js/line-config.js` の `ENDPOINT_URL` も同じ URL |
 | LIFF が真っ白 | `line-config.js` の LIFF_ID、Endpoint URL が本番 URL と一致しているか |
 | 「サーバー設定が未完了」 | Edge Function の Secrets（`LINE_CHANNEL_ID` 等） |
+| **「ID トークンを取得できませんでした」** | LIFF の Scope に **openid** があるか。設定後は一度 LINE を閉じて「本を借りる」から開き直す |
 | 「ID トークンの検証に失敗」 | Channel ID が LIFF のチャネルと一致しているか |
 | 「line_user_id 列がない」 | `20260617_add_line_user_id.sql` を実行したか |
 | カメラが起動しない | LINE アプリ内でカメラ権限、HTTPS であること |
