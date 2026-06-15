@@ -301,5 +301,7 @@
     PASSWORD_MIN_LENGTH,
     HOME_PAGE,
     STAFF_TABLE,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
   };
 })(window);

@@ -27,6 +27,14 @@
 
 **学生セルフ貸出を使う場合**は 5 を Supabase SQL Editor で実行し、必要なら `NOTIFY pgrst, 'reload schema';` を確認してください。
 
+## 公式 LINE 連携
+
+| 順番 | ファイル | 内容 |
+|------|----------|------|
+| 6 | `20260617_add_line_user_id.sql` | LINE User ID 紐づけ（`line_user_id`） |
+
+手順の詳細は **`docs/09_LINE連携手順.md`** を参照。Edge Function `line-auth` のデプロイが必要です。
+
 ## テストデータ（貸し出し履歴 50 件）
 
 | ファイル | 内容 |

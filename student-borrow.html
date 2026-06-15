@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>学生セルフ貸出 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/book-qr.js"></script>
   <script src="js/student-auth.js"></script>
+  <script src="js/line-config.js"></script>
+  <script src="js/line-liff.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -131,6 +134,21 @@
       font-size: 0.9rem;
     }
     .loan-list li:last-child { border-bottom: none; }
+    .line-badge {
+      display: inline-block;
+      margin-bottom: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: #06c755;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .line-hint {
+      margin: 0 0 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
     .is-hidden { display: none !important; }
   </style>
 </head>
@@ -142,6 +160,33 @@
         <p>図書の QR コードを読み取って借ります</p>
       </header>
 
+      <div id="line-loading" class="card is-hidden" hidden>
+        <span class="line-badge">LINE</span>
+        <p class="line-hint" style="margin:0;">LINE でログインしています…</p>
+      </div>
+
+      <div id="line-link-panel" class="card is-hidden" hidden>
+        <span class="line-badge">LINE 初回設定</span>
+        <h2 style="margin:0 0 0.5rem;font-size:1.05rem;">学籍番号と LINE を紐づけ</h2>
+        <p id="line-link-desc" class="line-hint">初回のみ、学生マスタの情報で本人確認します。</p>
+        <form id="line-link-form" novalidate>
+          <div class="form-group">
+            <label for="line-link-student-number">学籍番号</label>
+            <input type="text" id="line-link-student-number" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="line-link-birth-date">生年月日</label>
+            <input type="text" id="line-link-birth-date" inputmode="numeric" maxlength="8" placeholder="YYYYMMDD（例：20020415）" required />
+          </div>
+          <button type="submit" class="btn btn-primary">LINE と紐づけて借りる</button>
+        </form>
+      </div>
+
+      <p id="line-browser-hint" class="line-hint is-hidden" hidden>
+        公式 LINE のメニュー「本を借りる」から開くと、LINE ログインで借りられます。
+      </p>
+
+      <div id="password-auth-section">
       <div class="auth-tabs" role="tablist">
         <button type="button" id="auth-tab-login" class="is-active">ログイン</button>
         <button type="button" id="auth-tab-signup">初回登録</button>
@@ -179,6 +224,7 @@
           </div>
           <button type="submit" class="btn btn-primary">アカウント登録</button>
         </form>
+      </div>
       </div>
     </section>
 
@@ -517,16 +563,103 @@
       }
     }
 
+    async function resolveCurrentStudent() {
+      const lineStudent = LibralyLineLiff.getCurrentStudent();
+      if (lineStudent) return lineStudent;
+      return LibralyStudentAuth.getCurrentStudent();
+    }
+
+    function showLineLoading(show) {
+      const el = document.getElementById("line-loading");
+      el.classList.toggle("is-hidden", !show);
+      el.hidden = !show;
+    }
+
+    function showLineLinkPanel(show, displayName) {
+      const panel = document.getElementById("line-link-panel");
+      const passwordSection = document.getElementById("password-auth-section");
+      panel.classList.toggle("is-hidden", !show);
+      panel.hidden = !show;
+      passwordSection.classList.toggle("is-hidden", show);
+      passwordSection.hidden = show;
+      if (show && displayName) {
+        document.getElementById("line-link-desc").textContent =
+          (displayName ? displayName + " さん、" : "") +
+          "初回のみ学籍番号と生年月日で本人確認します。";
+      }
+    }
+
+    function showLineBrowserHint(show) {
+      const el = document.getElementById("line-browser-hint");
+      el.classList.toggle("is-hidden", !show);
+      el.hidden = !show;
+    }
+
+    async function startAppWithStudent(student) {
+      currentStudent = student;
+      showAppMain();
+      const lineName = LibralyLineLiff.getDisplayName();
+      const label =
+        student.name +
+        "（" +
+        student.student_number +
+        "）" +
+        (lineName ? " / LINE" : "");
+      studentNameEl.textContent = label;
+      await loadMyLoans();
+    }
+
     async function startApp() {
-      currentStudent = await LibralyStudentAuth.getCurrentStudent();
-      if (!currentStudent) {
+      const student = await resolveCurrentStudent();
+      if (!student) {
         showAuthGate();
         return;
       }
-      showAppMain();
-      studentNameEl.textContent =
-        currentStudent.name + "（" + currentStudent.student_number + "）";
-      await loadMyLoans();
+      await startAppWithStudent(student);
+    }
+
+    async function bootstrapLineAuth() {
+      if (!LibralyLineLiff.isConfigured()) return false;
+
+      showAuthGate();
+      showLineBrowserHint(false);
+      showLineLinkPanel(false);
+      showLineLoading(true);
+
+      const ready = await LibralyLineLiff.initLiff();
+      if (!ready) {
+        showLineLoading(false);
+        return false;
+      }
+
+      if (!LibralyLineLiff.isInLineClient()) {
+        showLineLoading(false);
+        showLineBrowserHint(true);
+        return false;
+      }
+
+      const loggedIn = await LibralyLineLiff.ensureLoggedIn();
+      if (!loggedIn) return true;
+
+      const loginResult = await LibralyLineLiff.loginWithLine();
+      showLineLoading(false);
+
+      if (loginResult.error) {
+        alert(loginResult.error.message);
+        return true;
+      }
+
+      if (loginResult.needs_link) {
+        showLineLinkPanel(true, loginResult.line_display_name);
+        return true;
+      }
+
+      if (loginResult.student) {
+        await startAppWithStudent(loginResult.student);
+        return true;
+      }
+
+      return false;
     }
 
     document.getElementById("auth-tab-login").addEventListener("click", function () {
@@ -578,7 +711,37 @@
 
     document.getElementById("logout-btn").addEventListener("click", function () {
       stopScanner();
+      if (LibralyLineLiff.hasActiveSession()) {
+        LibralyLineLiff.signOut();
+        showAuthGate();
+        showLineLinkPanel(false);
+        showLineLoading(false);
+        if (LibralyLineLiff.isInLineClient()) {
+          bootstrapLineAuth();
+        }
+        return;
+      }
       LibralyStudentAuth.studentSignOut();
+    });
+
+    document.getElementById("line-link-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const studentNumber = document.getElementById("line-link-student-number").value.trim();
+      const birthDate = document.getElementById("line-link-birth-date").value;
+      if (!studentNumber || !birthDate) {
+        alert("学籍番号と生年月日を入力してください。");
+        return;
+      }
+      const result = await LibralyLineLiff.linkStudent({
+        student_number: studentNumber,
+        birth_date: birthDate,
+      });
+      if (result.error) {
+        alert(result.error.message);
+        return;
+      }
+      showLineLinkPanel(false);
+      await startAppWithStudent(result.student);
     });
     scanStartBtn.addEventListener("click", startScanner);
     scanStopBtn.addEventListener("click", stopScanner);
@@ -590,11 +753,24 @@
         window.location.replace("index.html");
         return;
       }
-      if (!session || !LibralyStudentAuth.isStudentSession(session)) {
-        showAuthGate();
+
+      const lineStudent = LibralyLineLiff.getCurrentStudent();
+      if (lineStudent) {
+        await startAppWithStudent(lineStudent);
         return;
       }
-      await startApp();
+
+      if (session && LibralyStudentAuth.isStudentSession(session)) {
+        await startApp();
+        return;
+      }
+
+      if (LibralyLineLiff.isConfigured()) {
+        const handled = await bootstrapLineAuth();
+        if (handled) return;
+      }
+
+      showAuthGate();
     })();
   </script>
 </body>
