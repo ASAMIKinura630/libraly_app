@@ -1,6 +1,7 @@
 # 公式 LINE 連携手順（学生セルフ貸出）
 
-> **汎用マニュアル（新規プロジェクト用）:** [`10_Supabase×公式LINE連携バイブル.md`](./10_Supabase×公式LINE連携バイブル.md)
+> **汎用マニュアル:** [`10_Supabase×公式LINE連携バイブル.md`](./10_Supabase×公式LINE連携バイブル.md)  
+> **2チャネル構成（LIFF + push）:** [`11_LIFF_MessagingAPI移行手順.md`](./11_LIFF_MessagingAPI移行手順.md)
 
 図書館保守システムの学生向け貸出を、**公式 LINE の LIFF** から開き、LINE アカウントでログインするための設定手順です。
 
@@ -39,21 +40,18 @@ sql/20260619_line_reminder_log.sql
 
 ---
 
-## 1. LINE Login チャネル（Messaging API と同じプロバイダー）
+## 1. LINE Login チャネル（LIFF はここに作る）
 
-多くの場合、**既存の Messaging API チャネル** に LIFF を追加します。
+> **2019/11/11 以降、Messaging API チャネルには LIFF を追加できません。**  
+> LIFF は **LINEログインチャネル** に作成します。push は別の **Messaging API チャネル** で送ります（[11 の手順](./11_LIFF_MessagingAPI移行手順.md)）。
 
 1. [LINE Developers Console](https://developers.line.biz/console/) を開く
-2. 対象の **プロバイダー** → **Messaging API チャネル** を選択
+2. 対象の **プロバイダー** → **LINEログインチャネル** を選択（本プロジェクト: `2010403811`）
 3. **Basic settings** タブで次をメモする
-   - **Channel ID**（数字）→ 後で `LINE_CHANNEL_ID` に設定
+   - **Channel ID**（数字）→ 後で `LINE_CHANNEL_ID` に設定（**ログインチャネルの ID**）
    - **Channel secret** → `LINE_SESSION_SECRET` の元にも使えます（任意の長いランダム文字列でも可）
 
-### LINE Login 設定（チャネルに Login が無い場合）
-
-1. 同じプロバイダーで **LINE Login** チャネルを新規作成してもよい
-2. **LIFF** は Messaging API チャネル側に追加するのが一般的
-3. **Channel ID** は LIFF 作成時に使う ID と一致させる（Messaging API チャネルの Channel ID）
+Messaging API チャネル（`2010403797`）は **リマインド push 用** に別途用意し、同じプロバイダー配下に置きます。
 
 ---
 
@@ -112,7 +110,7 @@ Supabase Dashboard → **Project Settings** → **Edge Functions** → **Secrets
 
 | 名前 | 値 |
 |------|-----|
-| `LINE_CHANNEL_ID` | Messaging API チャネルの Channel ID |
+| `LINE_CHANNEL_ID` | **LINEログインチャネル**の Channel ID（LIFF と同じチャネル） |
 | `LINE_SESSION_SECRET` | Channel secret または 32文字以上のランダム文字列 |
 
 `SUPABASE_URL` と `SUPABASE_SERVICE_ROLE_KEY` は Supabase が自動注入します。
@@ -163,12 +161,15 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 2. 「LINE 返却リマインド」カードのチェックボックスで有効/無効を切り替え
 3. **デフォルトはオフ**。有料プラン移行の目処が立ってからオンにする
 
+> **本番で自動送信を始めるとき:** [`12_LINE返却リマインド本番開始手順.md`](./12_LINE返却リマインド本番開始手順.md)
+
 ### 5.3 Secrets の追加登録
 
 | 名前 | 値 |
 |------|-----|
 | `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API チャネルの Channel access token（長期） |
-| `REMINDER_CRON_SECRET` | 手動テスト用の任意文字列（任意） |
+| `LINE_LIFF_ID` | `2010403811-I1HtymKS`（リマインド文の LIFF URL 用・任意） |
+| `REMINDER_CRON_SECRET` | 手動テスト・cron 用の任意文字列（`x-reminder-secret` ヘッダー） |
 
 `LINE_CHANNEL_ID` / `LINE_SESSION_SECRET`（`line-auth` 用）に加えて登録します。
 
@@ -192,6 +193,19 @@ supabase functions deploy line-reminder --no-verify-jwt --project-ref bpfytlurmu
 
 ### 5.5 手動テスト（curl）
 
+**事前:** 職員画面でリマインドを **オン** にする（テスト後は **オフ** に戻す）。
+
+`REMINDER_CRON_SECRET` を Supabase Secrets に登録済みなら、Service Role キー不要で呼べます。
+
+```bash
+curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-reminder" \
+  -H "x-reminder-secret: <REMINDER_CRON_SECRET>" \
+  -H "Content-Type: application/json" \
+  -d "{}"
+```
+
+Service Role キーを使う場合:
+
 ```bash
 curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-reminder" \
   -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
@@ -199,7 +213,13 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-reminde
   -d "{}"
 ```
 
-オフのときは `skipped: true` が返ります。オンかつ対象貸出があるとき `sent_users` / `sent_items` が返ります。
+| 応答 | 意味 |
+|------|------|
+| `skipped: true` | 職員画面でオフ、または対象なし |
+| `sent_users: 1` / `sent_items: 1` | 送信成功 |
+| `failed_users` > 0 | LINE push 失敗（友だち未追加・トークン無効など） |
+
+オフのときは `skipped: true` が返ります。
 
 ---
 

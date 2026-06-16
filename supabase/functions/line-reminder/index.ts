@@ -11,7 +11,14 @@ const SETTINGS_TABLE = "libraly_app_settings";
 const SETTINGS_ROW_ID = "default";
 const LOG_TABLE = "libraly_app_line_reminder_log";
 const HISTORY_TABLE = "libraly_app_lending_history";
-const LIFF_URL = "https://liff.line.me/2010403811-I1HtymKS";
+
+function getLiffUrl(): string {
+  const fromUrl = Deno.env.get("LINE_LIFF_URL");
+  if (fromUrl) return fromUrl;
+  const liffId = Deno.env.get("LINE_LIFF_ID");
+  if (liffId) return `https://liff.line.me/${liffId.trim()}`;
+  return "https://liff.line.me/2010403811-I1HtymKS";
+}
 
 type ReminderType = "three_days_before" | "day_before" | "overdue";
 
@@ -149,7 +156,7 @@ function buildMessage(
     lines.push("");
   }
 
-  lines.push(`貸出状況の確認: ${LIFF_URL}`);
+  lines.push(`貸出状況の確認: ${getLiffUrl()}`);
   return lines.join("\n").trim();
 }
 
