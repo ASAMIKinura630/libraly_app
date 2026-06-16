@@ -125,6 +125,55 @@
       font-size: 0.95rem;
     }
 
+    .book-current-lend {
+      margin: 0.75rem 0 1rem;
+      padding: 0.85rem 1rem;
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      background: #f0f7ff;
+    }
+
+    .book-current-lend--overdue {
+      border-color: var(--danger);
+      background: var(--error-bg);
+    }
+
+    .book-current-lend--available {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+
+    .book-current-lend__heading {
+      margin: 0 0 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .book-current-lend--overdue .book-current-lend__heading {
+      color: var(--error-text);
+    }
+
+    .book-current-lend__row {
+      margin: 0.25rem 0;
+      font-size: 0.95rem;
+    }
+
+    .book-current-lend__label {
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 0.35rem;
+    }
+
+    .book-current-lend__due {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .book-current-lend--overdue .book-current-lend__due {
+      color: var(--error-text);
+    }
+
     .book-qr {
       margin-top: 1.25rem;
       padding-top: 1.25rem;
@@ -392,6 +441,62 @@
       return "—";
     }
 
+    function toDateInputValue(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+
+    function isOverdue(record) {
+      if (!record || record.is_returned || !record.due_date) return false;
+      return record.due_date < toDateInputValue(new Date());
+    }
+
+    function findCurrentLending(records) {
+      if (!records || !records.length) return null;
+      return records.find(function (h) {
+        return !h.is_returned;
+      }) || null;
+    }
+
+    function renderCurrentLendingStatus(currentLending) {
+      if (!currentLending) {
+        return (
+          '<div class="book-current-lend book-current-lend--available" role="status">' +
+          '<p class="book-current-lend__heading">現在の貸出状況</p>' +
+          '<p class="book-current-lend__row">貸出中ではありません（棚にあり）</p>' +
+          "</div>"
+        );
+      }
+
+      const overdue = isOverdue(currentLending);
+      const boxClass =
+        "book-current-lend" + (overdue ? " book-current-lend--overdue" : "");
+      const heading = overdue ? "現在の貸出状況（延滞）" : "現在の貸出状況（貸出中）";
+      const dueLabel = overdue ? "返却予定日（延滞）" : "返却予定日";
+
+      return (
+        '<div class="' +
+        boxClass +
+        '" role="status">' +
+        '<p class="book-current-lend__heading">' +
+        escapeHtml(heading) +
+        "</p>" +
+        '<p class="book-current-lend__row"><span class="book-current-lend__label">借り手</span>' +
+        escapeHtml(getStudentName(currentLending)) +
+        "（" +
+        escapeHtml(currentLending.student_number) +
+        "）</p>" +
+        '<p class="book-current-lend__row"><span class="book-current-lend__label">' +
+        escapeHtml(dueLabel) +
+        '</span><span class="book-current-lend__due">' +
+        escapeHtml(formatDateOnly(currentLending.due_date)) +
+        "</span></p>" +
+        "</div>"
+      );
+    }
+
     function renderBookQr(book) {
       if (fromInquiry) return;
 
@@ -436,7 +541,7 @@
       }
     }
 
-    function renderBookSummary(book) {
+    function renderBookSummary(book, currentLending) {
       const categoryName = getCategoryName(book);
       const categoryHtml = categoryName
         ? '<span class="category-label">' + escapeHtml(categoryName) + "</span>"
@@ -446,6 +551,7 @@
         '<h3 class="book-summary__title">' +
         escapeHtml(book.title) +
         "</h3>" +
+        renderCurrentLendingStatus(currentLending) +
         '<p class="book-summary__row"><span class="book-summary__label">著者</span>' +
         escapeHtml(book.name) +
         "</p>" +
@@ -573,14 +679,15 @@
 
       if (historyRes.error) {
         console.error(historyRes.error);
-        renderBookSummary(bookRes.data);
+        renderBookSummary(bookRes.data, null);
         historyListEl.innerHTML =
           '<p class="empty-state">貸出履歴の取得に失敗しました。</p>';
         return;
       }
 
-      renderBookSummary(bookRes.data);
-      renderHistoryList(historyRes.data || []);
+      const historyRecords = historyRes.data || [];
+      renderBookSummary(bookRes.data, findCurrentLending(historyRecords));
+      renderHistoryList(historyRecords);
     }
 
     (async function init() {
