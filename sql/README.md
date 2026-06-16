@@ -35,6 +35,16 @@
 
 手順の詳細は **`docs/09_LINE連携手順.md`** を参照。Edge Function `line-auth` のデプロイが必要です。
 
+## LINE 返却リマインド（準備）
+
+| 順番 | ファイル | 内容 |
+|------|----------|------|
+| 7 | `20260618_line_reminder_settings.sql` | 送信オン/オフ設定（`libraly_app_settings`） |
+| 8 | `20260619_line_reminder_log.sql` | 送信ログ（重複防止） |
+
+- 職員画面（`index.html`）で **オフがデフォルト**
+- 送信処理: Edge Function `line-reminder`（設定がオンのときのみ。毎日 JST 20:00）
+
 ## テストデータ（貸し出し履歴 50 件）
 
 | ファイル | 内容 |

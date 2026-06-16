@@ -6,6 +6,7 @@
   <title>貸出・返却 | 図書館保守システム</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
+  <script src="js/app-settings.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/voice-input.js"></script>
   <link rel="stylesheet" href="css/theme.css" />
@@ -275,6 +276,92 @@
       padding: 0.35rem 0.75rem;
       min-height: 36px;
       font-size: 0.85rem;
+    }
+
+    .line-settings {
+      margin-bottom: 1rem;
+      border-left: 4px solid #06c755;
+    }
+
+    .line-settings__head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .line-settings__head h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .line-settings__badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: #06c755;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 0.35rem;
+    }
+
+    .line-settings__desc {
+      margin: 0 0 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .line-settings__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+    }
+
+    .line-settings__toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .line-settings__toggle input {
+      width: 1.15rem;
+      height: 1.15rem;
+      cursor: pointer;
+    }
+
+    .line-settings__status {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .line-settings__status.is-on {
+      color: var(--success-text);
+      font-weight: 600;
+    }
+
+    .line-settings__status.is-off {
+      color: var(--muted);
+    }
+
+    .line-settings__status.is-error {
+      color: var(--error-text);
+    }
+
+    .line-settings__schedule {
+      margin: 0.65rem 0 0;
+      padding: 0.65rem 0.75rem;
+      background: var(--panel-alt);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
     }
 
     .btn-return:hover:not(:disabled) {
@@ -897,6 +984,25 @@
 
     <div id="message" class="message" role="status" aria-live="polite"></div>
 
+    <section class="card line-settings" aria-labelledby="line-settings-heading">
+      <div class="line-settings__head">
+        <h2 id="line-settings-heading">LINE 返却リマインド<span class="line-settings__badge">LINE</span></h2>
+      </div>
+      <p class="line-settings__desc">
+        テスト環境向けの送信スイッチです。オフのときは LINE へ返却リマインドを送りません（Messaging API の送信・課金を抑えられます）。
+      </p>
+      <div class="line-settings__row">
+        <label class="line-settings__toggle" for="line-reminder-enabled">
+          <input type="checkbox" id="line-reminder-enabled" />
+          返却リマインドの自動送信を有効にする
+        </label>
+        <span id="line-reminder-status" class="line-settings__status is-off">読み込み中…</span>
+      </div>
+      <p class="line-settings__schedule">
+        送信予定（実装後）: 毎日 <strong>20:00</strong> — 返却3日前 / 返却前日 / 延滞時（いずれも未返却のみ）
+      </p>
+    </section>
+
     <section class="loan-summary" aria-labelledby="summary-heading">
       <h2 id="summary-heading" class="loan-summary__title">貸出状況サマリー</h2>
       <div class="loan-summary__grid">
@@ -1234,8 +1340,123 @@
       currentStaff = await LibralyAuth.getCurrentStaff();
       updateOperatorHint();
       setBusy(isBusy);
+      updateLineReminderToggleState();
       return !!currentStaff;
     }
+
+    const lineReminderEnabledEl = document.getElementById("line-reminder-enabled");
+    const lineReminderStatusEl = document.getElementById("line-reminder-status");
+    let lineReminderSaving = false;
+
+    function formatSettingsUpdatedAt(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "";
+        return (
+          d.getFullYear() +
+          "/" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "/" +
+          String(d.getDate()).padStart(2, "0") +
+          " " +
+          String(d.getHours()).padStart(2, "0") +
+          ":" +
+          String(d.getMinutes()).padStart(2, "0")
+        );
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function renderLineReminderStatus(settings, errorMessage) {
+      if (errorMessage) {
+        lineReminderStatusEl.textContent = errorMessage;
+        lineReminderStatusEl.className = "line-settings__status is-error";
+        return;
+      }
+      const on = settings && settings.line_reminder_enabled;
+      const updated = formatSettingsUpdatedAt(settings && settings.updated_at);
+      lineReminderStatusEl.textContent = on
+        ? "現在: オン（20:00 に送信予定）" + (updated ? " — 更新: " + updated : "")
+        : "現在: オフ（送信されません）" + (updated ? " — 更新: " + updated : "");
+      lineReminderStatusEl.className = "line-settings__status " + (on ? "is-on" : "is-off");
+    }
+
+    function updateLineReminderToggleState() {
+      const disabled = lineReminderSaving || !currentStaff;
+      lineReminderEnabledEl.disabled = disabled;
+    }
+
+    async function loadLineReminderSettings() {
+      if (!window.LibralyAppSettings) return;
+      lineReminderEnabledEl.disabled = true;
+      const result = await LibralyAppSettings.getSettings();
+      if (result.error) {
+        const msg = String(result.error.message || "");
+        if (/libraly_app_settings|schema cache|does not exist|relation/i.test(msg)) {
+          renderLineReminderStatus(
+            null,
+            "設定テーブルがありません。sql/20260618_line_reminder_settings.sql を実行してください。"
+          );
+        } else {
+          renderLineReminderStatus(null, "設定の読み込みに失敗しました。");
+        }
+        lineReminderEnabledEl.checked = false;
+        updateLineReminderToggleState();
+        return;
+      }
+      lineReminderEnabledEl.checked = Boolean(result.data && result.data.line_reminder_enabled);
+      renderLineReminderStatus(result.data, null);
+      updateLineReminderToggleState();
+    }
+
+    lineReminderEnabledEl.addEventListener("change", async function () {
+      if (!window.LibralyAppSettings || lineReminderSaving) return;
+      const nextOn = lineReminderEnabledEl.checked;
+
+      if (!currentStaff) {
+        lineReminderEnabledEl.checked = !nextOn;
+        alert("担当者が未登録のため設定を変更できません。");
+        return;
+      }
+
+      if (nextOn) {
+        const ok = window.confirm(
+          "LINE 返却リマインドの自動送信をオンにします。\n\n" +
+            "・Messaging API の送信が発生する可能性があります\n" +
+            "・テスト環境ではオフ運用を推奨します\n\n" +
+            "オンにしてよろしいですか？"
+        );
+        if (!ok) {
+          lineReminderEnabledEl.checked = false;
+          return;
+        }
+      }
+
+      lineReminderSaving = true;
+      updateLineReminderToggleState();
+      const previous = !nextOn;
+      const result = await LibralyAppSettings.setLineReminderEnabled(
+        nextOn,
+        currentStaff.id
+      );
+      lineReminderSaving = false;
+
+      if (result.error) {
+        lineReminderEnabledEl.checked = previous;
+        updateLineReminderToggleState();
+        alert("設定の保存に失敗しました: " + (result.error.message || "不明なエラー"));
+        return;
+      }
+
+      renderLineReminderStatus(result.data, null);
+      updateLineReminderToggleState();
+      showMessage(
+        nextOn ? "LINE 返却リマインドをオンにしました。" : "LINE 返却リマインドをオフにしました。",
+        "success"
+      );
+    });
 
     function formatDateTime(iso) {
       if (!iso) return "—";
@@ -2864,6 +3085,7 @@
         loadStudents(),
         loadCategories(),
         loadFacultyDepartment(),
+        loadLineReminderSettings(),
       ]);
       populateStudentSelect();
       if (booksOk) populateBookSelect();

@@ -31,6 +31,8 @@ Supabase SQL Editor で次を実行してください。
 
 ```
 sql/20260617_add_line_user_id.sql
+sql/20260618_line_reminder_settings.sql
+sql/20260619_line_reminder_log.sql
 ```
 
 （学生セルフ貸出をまだ入れていない場合は `20260616_student_self_service.sql` も先に実行）
@@ -143,7 +145,57 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 
 ---
 
-## 5. 学生の利用フロー
+## 5. LINE 返却リマインド（Phase 2）
+
+未返却の貸出について、LINE で返却を促す push 通知を送ります。**テスト環境では職員画面でオフ（デフォルト）** のまま運用してください。
+
+### 5.1 送信タイミング（すべて JST 20:00）
+
+| 種別 | 条件 |
+|------|------|
+| 返却3日前 | 返却予定日の 3 日前 |
+| 返却前日 | 返却予定日の **前日**（当日朝ではなく前夜に通知） |
+| 延滞 | 返却予定日を過ぎても未返却（毎日 20:00） |
+
+### 5.2 職員画面でのオン/オフ
+
+1. 職員で `index.html` にログイン
+2. 「LINE 返却リマインド」カードのチェックボックスで有効/無効を切り替え
+3. **デフォルトはオフ**。有料プラン移行の目処が立ってからオンにする
+
+### 5.3 Secrets の追加登録
+
+| 名前 | 値 |
+|------|-----|
+| `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API チャネルの Channel access token（長期） |
+| `REMINDER_CRON_SECRET` | 手動テスト用の任意文字列（任意） |
+
+`LINE_CHANNEL_ID` / `LINE_SESSION_SECRET`（`line-auth` 用）に加えて登録します。
+
+Channel access token は [LINE Developers Console](https://developers.line.biz/console/) → Messaging API チャネル → **Messaging API** タブで発行します。
+
+### 5.4 Edge Function のデプロイ
+
+```bash
+supabase functions deploy line-reminder --no-verify-jwt --project-ref bpfytlurmubgmzaisonp
+```
+
+`supabase/config.toml` に **毎日 UTC 11:00（JST 20:00）** のスケジュールを定義しています。Dashboard の Edge Functions → Schedules でも確認してください。
+
+### 5.5 手動テスト（curl）
+
+```bash
+curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-reminder" \
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
+  -H "Content-Type: application/json" \
+  -d "{}"
+```
+
+オフのときは `skipped: true` が返ります。オンかつ対象貸出があるとき `sent_users` / `sent_items` が返ります。
+
+---
+
+## 6. 学生の利用フロー
 
 ### 初回
 
@@ -164,7 +216,7 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 
 ---
 
-## 6. トラブルシューティング
+## 7. トラブルシューティング
 
 | 症状 | 確認すること |
 |------|----------------|
@@ -176,10 +228,12 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 | 「line_user_id 列がない」 | `20260617_add_line_user_id.sql` を実行したか |
 | カメラが起動しない | LINE アプリ内でカメラ権限、HTTPS であること |
 | ブラウザ直開き | LINE ログインは **LIFF（LINE アプリ内）** 推奨。直開きは学籍番号ログインを利用 |
+| リマインドが送られない | 職員画面でオンか、`LINE_CHANNEL_ACCESS_TOKEN`、cron、`20260619` SQL 実行済みか |
+| リマインドが意図せず送られた | 職員画面でオフにする。テスト環境はデフォルトオフを維持 |
 
 ---
 
-## 7. セキュリティメモ
+## 8. セキュリティメモ
 
 - LINE User ID は **LINE アカウント** に紐づく（機種変更しても同じアカウントなら不変）
 - ID トークンは **Edge Function のみ** で検証
@@ -187,15 +241,20 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 
 ---
 
-## 8. 関連ファイル
+## 9. 関連ファイル
 
 | ファイル | 役割 |
 |----------|------|
 | `js/line-config.js` | LIFF ID 設定 |
 | `js/line-liff.js` | LIFF 初期化・API 呼び出し |
+| `js/app-settings.js` | 返却リマインド送信オン/オフ |
 | `supabase/functions/line-auth/index.ts` | ID トークン検証・紐づけ |
+| `supabase/functions/line-reminder/index.ts` | 返却リマインド push |
 | `sql/20260617_add_line_user_id.sql` | `line_user_id` 列 |
+| `sql/20260618_line_reminder_settings.sql` | 送信スイッチ用テーブル |
+| `sql/20260619_line_reminder_log.sql` | 送信ログ |
 | `student-borrow.html` | 学生貸出 UI（LINE 対応） |
+| `index.html` | 職員画面（リマインド設定） |
 
 ---
 
@@ -204,3 +263,4 @@ curl -X POST "https://bpfytlurmubgmzaisonp.supabase.co/functions/v1/line-auth" \
 | 版 | 日付 | 内容 |
 |----|------|------|
 | 1.0 | 2026-06-12 | Phase 1（LIFF ログイン・紐づけ・貸出画面）初版 |
+| 1.1 | 2026-06-12 | Phase 2（返却リマインド・職員画面オン/オフ）を追記 |
