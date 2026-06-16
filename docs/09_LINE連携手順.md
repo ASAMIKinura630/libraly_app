@@ -180,7 +180,15 @@ Channel access token は [LINE Developers Console](https://developers.line.biz/c
 supabase functions deploy line-reminder --no-verify-jwt --project-ref bpfytlurmubgmzaisonp
 ```
 
-`supabase/config.toml` に **毎日 UTC 11:00（JST 20:00）** のスケジュールを定義しています。Dashboard の Edge Functions → Schedules でも確認してください。
+`supabase/config.toml` で `verify_jwt = false` を定義しています。
+
+**定期実行（毎日 JST 20:00）** は Supabase Dashboard → **Edge Functions** → `line-reminder` → **Schedules** で cron を設定します。
+
+```
+0 11 * * *
+```
+
+（UTC 11:00 = JST 20:00）
 
 ### 5.5 手動テスト（curl）
 

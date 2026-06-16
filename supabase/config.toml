@@ -12,6 +12,5 @@ major_version = 17
 [functions.line-reminder]
 verify_jwt = false
 
-[functions.line-reminder.schedule]
-# 毎日 JST 20:00（UTC 11:00）
-cron = "0 11 * * *"
+# スケジュール（JST 20:00 = UTC 11:00）は Supabase Dashboard
+# → Edge Functions → line-reminder → Schedules で cron `0 11 * * *` を設定
